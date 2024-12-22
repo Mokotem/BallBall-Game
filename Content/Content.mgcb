@@ -25,6 +25,13 @@
 /processorParam:TextureFormat=Color
 /build:Game/Circle.png
 
+#begin Game/fritefont.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:Game/fritefont.spritefont
+
 #begin Game/MapManager/tileSet.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -61,6 +68,18 @@
 /processorParam:TextureFormat=Color
 /build:Game/PlayerManager/player.png
 
+#begin Game/ui.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Game/ui.png
+
 #begin Shaders/Bulge.fx
 /importer:EffectImporter
 /processor:EffectProcessor
@@ -90,6 +109,12 @@
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
 /build:Shaders/Glitch.fx
+
+#begin Shaders/ShaderTahLesFous.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/ShaderTahLesFous.fx
 
 #begin Shaders/Wave.fx
 /importer:EffectImporter

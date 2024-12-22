@@ -31,9 +31,9 @@ namespace FriteCollection.Tools.Pen
             FriteModel.MonoGame.instance.SpriteBatch.DrawLine
             (
                     v1.x + offset.x - Scripting.Camera.Position.x,
-                    -v1.y + offset.y - Scripting.Camera.Position.y,
-                    v2.x + offset.x,
-                    -v2.y + offset.y,
+                    -v1.y + offset.y + Scripting.Camera.Position.y,
+                    v2.x + offset.x - Scripting.Camera.Position.x,
+                    -v2.y + offset.y + Scripting.Camera.Position.y,
                     new Microsoft.Xna.Framework.Color
                     (
                         co.RGB.R, co.RGB.G, co.RGB.B
@@ -72,7 +72,7 @@ namespace FriteCollection.Tools.Pen
         /// <summary>
         /// Draws a circle.
         /// </summary>
-        public static void Circle(Entity.Vector v, float radius, float? thickness = null, Graphics.Color color = null)
+        public static void Circle(Entity.Vector v, float radius, float? thickness = null, Graphics.Color color = null, float alpha = 1f)
         {
             float th = thickness is null ? Pen.thickness : thickness.Value;
             Graphics.Color co = color is null ? Pen.Color : color;
@@ -86,13 +86,13 @@ namespace FriteCollection.Tools.Pen
                 (
                     new Microsoft.Xna.Framework.Vector2(
                     v.x + offset.x - Scripting.Camera.Position.x,
-                    -v.y + offset.y - Scripting.Camera.Position.y),
+                    -v.y + offset.y + Scripting.Camera.Position.y),
                     radius
                 ),
-                (int)(radius * 2),
+                (int)(radius),
                 new Microsoft.Xna.Framework.Color
                 (
-                        co.RGB.R, co.RGB.G, co.RGB.B
+                        co.RGB.R * alpha, co.RGB.G * alpha, co.RGB.B * alpha, alpha
                 ),
                 th,
                 0

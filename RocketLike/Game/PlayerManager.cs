@@ -10,78 +10,138 @@ using Microsoft.Xna.Framework.Input;
 
 namespace RocketLike;
 
-public class Manager : Script
+public class PlayerManager : Script
 {
-    public const float GRAVITY = 400f;
-    public const short floor = -16 * 5 - 12, roof = 64 + 32 - 4, walls = 16 * 14 - 20;
-    public static readonly SpriteSheet sheet =
-new SpriteSheet(Open.Texture("Game/PlayerManager/player"), 10, 10);
+    public const float GRAVITY = 288f;
+    public const short floor = -108, roof = 108, walls = 220;
+    public static SpriteSheet sheet;
 
     public static readonly Color ColorPlayer1 = Pico8.Green, Color2Player1 = Pico8.DarkGreen;
     public static readonly Color ColorPlayer2 = Pico8.Red, Color2Player2 = Pico8.DarkPurple;
 
-    private MapManager mapManager;
+    public static readonly System.Random random = new System.Random();
 
-    private float shakeTime = 0f;
-    private System.Random random = new System.Random();
+    public PlayerManager() : base(Scenes.Game) { }
 
-    public void Shake()
+    public Player p1, p2;
+
+    public override void BeforeStart()
     {
-        shakeTime = 0.2f;
+        GameManager.GameFont = Open.Font("Game/fritefont");
     }
-
-    public Manager() : base(Scenes.Game) { }
-
-    Player p1, p2;
 
     public override void Start()
     {
-        mapManager = GameManager.GetScript("MapManager") as MapManager;
-        Layer = 10;
-        p2 = new Player(mapManager.tilemap.GetPos(1, 6), ColorPlayer2, Color2Player2,
+        sheet = new SpriteSheet(Open.Texture("Game/PlayerManager/player"), 10, 10);
+        Player.ball = GameManager.GetScript("Ball") as Ball;
+        Player.fx = FriteModel.MonoGame.instance.Content.Load<Effect>("Shaders/CircleBarr");
+        Screen.backGround = Pico8.Lavender;
+        Layer = 1;
+        p2 = new Player(MapManager.tilemap.GetPos(1, 6), ColorPlayer2, Color2Player2,
             Keys.NumPad5, Keys.NumPad1, Keys.NumPad3, Keys.Left);
-        p1 = new Player(mapManager.tilemap.GetPos(0, 6), ColorPlayer1, Color2Player1,
-            Keys.Z, Keys.Q, Keys.D, Keys.V);
+        p1 = new Player(MapManager.tilemap.GetPos(0, 6), ColorPlayer1, Color2Player1,
+            Keys.Z, Keys.Q, Keys.D, Keys.S);
         Pen.GridOrigin = Bounds.Center;
+        (GameManager.GetScript("StartAnimation") as StartAnimation).START += GameStart;
+        (GameManager.GetScript("Ball") as Ball).BUT += But;
+    }
+
+    void But(bool sideRight, Ball.States state)
+    {
+        new Sequence(
+            () =>
+            {
+                if (sideRight)
+                {
+                    p2.locked = true;
+                }
+                else
+                {
+                    p1.locked = true;
+                }
+                return 4f;
+            },
+            () =>
+            {
+                p1.Reset();
+                p2.Reset();
+                return 0;
+            });
+    }
+
+    void GameStart()
+    {
+        p1.locked = false;
+        p2.locked = false;
+    }
+
+    public override void Update()
+    {
+        bool p1Col = p1.CheckCollisionBall();
+        bool p2Col = p2.CheckCollisionBall();
+        if (p1.Frapping && p2.Frapping && p1Col && p2Col)
+        {
+            if (random.Next(2) == 0)
+            {
+                p1.Bump(true);
+                p2.Bump(false);
+            }
+            else
+            {
+                p1.Bump(false);
+                p2.Bump(true);
+            }
+        }
+        else
+        {
+            if (p1.Frapping)
+            {
+                p1.Bump(p1Col);
+            }
+            if (p2.Frapping)
+            {
+                p2.Bump(p2Col);
+            }
+        }
     }
 
     public override void AfterUpdate()
     {
-        shakeTime += -Time.FrameTime;
-        if (shakeTime > 0)
+        if (Input.KeyBoard.Escape)
         {
-            Camera.Position = new Vector(
-            (float)(random.NextDouble() * 4) - 2,
-            (float)(random.NextDouble() * 4) - 2);
+            GameManager.CurrentScene = Scenes.Menu;
         }
-        else
-            Camera.Position = Vector.Zero;
     }
 
     public override void Dispose()
     {
         p1.Dispose();
         sheet.Dispose();
+        Player.fx.Dispose();
     }
 }
 
 public class Player : Clone
 {
     private const float cayoteTime = 0.07f;
-    private const float jumpForce = 180;
+    private const float jumpForce = 171;
     private const float vitesseXMax = 170;
-    private const int radius = 25;
+    private const int radius = 26;
+    private static readonly float gravity = PlayerManager.GRAVITY * 1.5f;
 
-    private static readonly Ball ball = GameManager.GetScript("Ball") as Ball;
+    public static Ball ball;
 
     private Keys up, left, right, tap;
-    private bool Up => Input.IsKeyDown(up);
-    private bool Left => Input.IsKeyDown(left);
-    private bool Right => Input.IsKeyDown(right);
-    private bool Tap => Input.IsKeyDown(tap);
+    private bool Up => Input.IsKeyDown(up) && !locked;
+    private bool Left => Input.IsKeyDown(left) && !locked;
+    private bool Right => Input.IsKeyDown(right) && !locked;
+    private bool Tap => Input.IsKeyDown(tap) && !locked;
 
     private readonly Object p = new Object();
     private readonly Color circleColor;
+    private readonly Vector startPos;
+    private Object _lock;
+    public bool locked = true;
 
     public Player(Vector pos, Color color, Color color2, Keys up, Keys left, Keys right, Keys tap) : base()
     {
@@ -89,23 +149,43 @@ public class Player : Clone
         this.left = left;
         this.right = right;
         this.tap = tap;
-        p.Renderer.Texture = Manager.sheet[0, 0];
+        p.Renderer.Texture = PlayerManager.sheet[0, 0];
         hit = new HitBox.Rectangle(p.Space);
         hit.LockSize = new(8, 8);
         p.Space.Scale = new Vector(10, 10);
         p.Renderer.Color = color;
         p.Space.Position = pos;
+        startPos = pos;
 
         circleColor = color2;
+        _lock = new Object();
+        _lock.Space.Scale = new Vector(10, 10);
+        _lock.Renderer.Texture = PlayerManager.sheet[4, 0];
 
         fx.Parameters["amount"].SetValue(power);
     }
 
+    public void Reset()
+    {
+        p.Space.Position = startPos;
+        vitesse = Vector.Zero;
+        frappeCouldown = 0.5f;
+        canBump = false;
+        lastSpace = false;
+        bumpDelay = 0f;
+        canUp = false;
+        power = 0;
+        locked = true;
+    }
+
     public override void Start()
     {
-        Layer = 0;
+        Layer = 10;
         fx.Parameters["thick"].SetValue(0.1f);
+        circleMesh = new Object();
+        circleMesh.Space.Scale = new Vector(radius, radius);
         circleMesh.Renderer.Color = Pico8.White;
+        power = maxpower;
     }
 
     Vector vitesse = Vector.Zero;
@@ -113,37 +193,55 @@ public class Player : Clone
 
     private float cayoteTimeCount = 0f;
 
+    public bool Frapping { get; private set; }
     private HitBox.Rectangle hit;
     private HitBox lastHit;
     bool grounded;
     float frappeCouldown = 0.5f;
+    public bool CheckCollisionBall()
+    {
+        return Math.GetDistance(p.Space.Position, ball.b.Space.Position) < radius + 10
+            && Ball.Active;
+    }
+
+    public void Bump(bool collision)
+    {
+        frappeCouldown = 0.3f;
+        canBump = false;
+        bumpDelay = 0.1f;
+        if (collision)
+        {
+            ball.Collide(p.Space.Position, vitesse);
+        }
+        vitesse = new Vector(0, 0);
+    }
 
     private bool Collisions()
     {
         walledLeft = false;
         walledRight = false;
         bool grounded = false;
-        if (p.Space.Position.x >=Manager.walls)
+        if (p.Space.Position.x >=PlayerManager.walls)
         {
-            p.Space.Position.x = Manager.walls;
+            p.Space.Position.x = PlayerManager.walls;
             vitesse.x = 0;
             walledRight = true;
         }
-        if (p.Space.Position.x <= -Manager.walls)
+        if (p.Space.Position.x <= -PlayerManager.walls)
         {
-            p.Space.Position.x = -Manager.walls;
+            p.Space.Position.x = -PlayerManager.walls;
             vitesse.x = 0;
             walledLeft = true;
         }
-        if (p.Space.Position.y < Manager.floor)
+        if (p.Space.Position.y < PlayerManager.floor)
         {
-            p.Space.Position.y = Manager.floor;
+            p.Space.Position.y = PlayerManager.floor;
             grounded = true;
             vitesse.y = 0;
         }
-        if (p.Space.Position.y > Manager.roof)
+        if (p.Space.Position.y > PlayerManager.roof)
         {
-            p.Space.Position.y = Manager.roof;
+            p.Space.Position.y = PlayerManager.roof;
             if (vitesse.y >= 0)
                 vitesse.y *= -0.25f;
         }
@@ -160,7 +258,7 @@ public class Player : Clone
                         p.Space.Position.y =
                             collider.PositionOffset.y + ((collider.LockSize.y + 8) / 2f);
                         vitesse.y = 0;
-                        p.Renderer.Texture = Manager.sheet[0, 0];
+                        p.Renderer.Texture = PlayerManager.sheet[0, 0];
                         grounded = true;
                         break;
 
@@ -169,21 +267,25 @@ public class Player : Clone
                             collider.PositionOffset.y - ((collider.LockSize.y + 8) / 2f);
                         if (vitesse.y >= 0)
                             vitesse.y *= -0.25f;
-                        p.Renderer.Texture = Manager.sheet[0, 0];
+                        p.Renderer.Texture = PlayerManager.sheet[0, 0];
                         break;
 
                     case HitBox.Sides.Left:
+                        p.Renderer.Texture = p.Renderer.Texture = PlayerManager.sheet[0, 0];
                         p.Space.Position.x =
                             collider.PositionOffset.x + ((collider.LockSize.x + 8) / 2f);
                         vitesse.x = 0;
                         walledLeft = true;
+
                         break;
 
                     case HitBox.Sides.Right:
+                        p.Renderer.Texture = p.Renderer.Texture = PlayerManager.sheet[0, 0];
                         p.Space.Position.x =
-                            collider.PositionOffset.x - ((collider.LockSize.x + 8) / 2f);
+                        collider.PositionOffset.x - ((collider.LockSize.x + 8) / 2f);
                         vitesse.x = 0;
                         walledRight = true;
+
                         break;
                 }
 
@@ -225,15 +327,19 @@ public class Player : Clone
 
     private void AddX(float value)
     {
-        if (value < 0)
-            p.Space.Scale.x = -10;
-        else
-            p.Space.Scale.x = 10;
-        vitesse.x += value * 1500 * Time.FrameTime;
-        if (vitesse.x > vitesseXMax)
-            vitesse.x = vitesseXMax;
-        if (vitesse.x < -vitesseXMax)
-            vitesse.x = -vitesseXMax;
+        if (!locked)
+        {
+            p.Renderer.Texture = PlayerManager.sheet[1, 0];
+            if (value < 0)
+                p.Space.Scale.x = -10;
+            else
+                p.Space.Scale.x = 10;
+            vitesse.x += value * 1500 * Time.FrameTime;
+            if (vitesse.x > vitesseXMax)
+                vitesse.x = vitesseXMax;
+            if (vitesse.x < -vitesseXMax)
+                vitesse.x = -vitesseXMax;
+        }
     }
 
     private void jump()
@@ -241,30 +347,23 @@ public class Player : Clone
         cayoteTimeCount = 1f;
         canUp = false;
         vitesse.y = jumpForce;
-        vitesse.y += -Manager.GRAVITY * Time.FrameTime;
-        p.Space.Position.y += vitesse.y * Time.FrameTime;
     }
 
     float bumpDelay = 0f;
-    private void Bump()
-    {
-        canBump = false;
-        bumpDelay = 0.1f;
-        if (Math.GetDistance(p.Space.Position, ball.b.Space.Position) < radius + 9)
-        {
-            ball.Collide(p.Space.Position, vitesse);
-        }
-        vitesse = new Vector(0, 0);
-    }
+    
 
     float partDelay = 1f;
-    private bool CanFrappe => !lastSpace && canBump && frappeCouldown <= 0;
+    private bool CanFrappe => !lastSpace && canBump && frappeCouldown <= 0 && !locked;
     private System.Random rand = new System.Random();
+    private float maxpower = 0.8f;
 
     public override void Update()
     {
+        p.Renderer.Texture = PlayerManager.sheet[0, 0];
         frappeCouldown += -Time.FrameTime;
-        vitesse.y += -Manager.GRAVITY * Time.FrameTime;
+        vitesse.y += -gravity * Time.FrameTime;
+        if (vitesse.y > jumpForce)
+            vitesse.y = jumpForce;
         p.Space.Position.y += vitesse.y * Time.FrameTime;
 
         if (Up == false)
@@ -287,7 +386,7 @@ public class Player : Clone
                 lastIsLeft = false;
         }
 
-        p.Renderer.Texture = Manager.sheet[0, 0];
+        p.Renderer.Texture = PlayerManager.sheet[0, 0];
         if (Left && Right)
         {
             if (lastIsLeft)
@@ -317,7 +416,7 @@ public class Player : Clone
         if (grounded)
         {
             canBump = true;
-            power = 1;
+            power = maxpower;
             cayoteTimeCount = 0f;
             walledLeft = false;
             walledRight = false;
@@ -325,25 +424,14 @@ public class Player : Clone
             {
                 jump();
             }
-
-            if (walledLeft)
-            {
-                p.Renderer.Texture = Manager.sheet[0, 0];
-            }
-            else
-            {
-                if (Right || Left)
-                {
-                    p.Renderer.Texture = Manager.sheet[1, 0];
-                }
-            }
         }
         else
         {
             if (walledLeft || walledRight)
             {
+                canBump = true;
                 cayoteTimeCount = 0f;
-                p.Renderer.Texture = Manager.sheet[2, 0];
+                p.Renderer.Texture = PlayerManager.sheet[2, 0];
                 if (vitesse.y < -50)
                     vitesse.y = -50;
 
@@ -368,7 +456,7 @@ public class Player : Clone
                 if (Up && canUp && power > 0)
                 {
                     circleMesh.Renderer.hide = false;
-                    vitesse.y += Manager.GRAVITY * 1.1f * Time.FrameTime;
+                    vitesse.y += gravity * 2f * Time.FrameTime;
                     power += -Time.FrameTime;
                     partDelay += Time.FrameTime;
                     if (partDelay > 0.02f)
@@ -382,31 +470,28 @@ public class Player : Clone
 
                 if (Math.Abs(vitesse.y) > Math.Abs(vitesse.x) && Math.Abs(vitesse.y) > 70)
                 {
-                    p.Renderer.Texture = Manager.sheet[3, 0];
-                }
-                else if (Math.Abs(vitesse.x) > 70)
-                {
-                    p.Renderer.Texture = Manager.sheet[1, 0];
+                    p.Renderer.Texture = PlayerManager.sheet[3, 0];
                 }
             }
         }
 
         if (Tap && CanFrappe)
         {
-            frappeCouldown = 0.4f;
-            Bump();
+            Frapping = true;
         }
+        else
+            Frapping = false;
 
         preLeft = Left;
         preRight = Right;
         lastSpace = this.Tap;
 
         circleMesh.Space.Position = p.Space.Position;
+        _lock.Space.Position = new Vector(p.Space.Position.x, p.Space.Position.y + 12);
     }
 
-    public override void Draw()
+    public override void BeforeDraw()
     {
-        p.Draw();
         if (bumpDelay > 0f)
         {
             Pen.Circle(p.Space.Position, bumpDelay / 0.1f * radius, color: p.Renderer.Color);
@@ -417,29 +502,24 @@ public class Player : Clone
         }
     }
 
-    Object circleMesh = new Object()
+    public override void Draw()
     {
-        Space = new Space()
-        {
-            Scale = new Vector(radius, radius)
-        }
-    };
+        p.Draw();
+        if (locked) _lock.Draw();
+    }
 
-    float power = 0.5f;
-    private Effect fx = FriteModel.MonoGame.instance.Content.Load<Effect>("Shaders/CircleBarr");
+    Object circleMesh;
+
+    float power;
+    public static Effect fx;
 
     public override void Draw(SpriteBatch spriteBatch)
     {
-        fx.Parameters["amount"].SetValue(1 - power);
-        spriteBatch.Begin(effect: fx);
+        fx.Parameters["amount"].SetValue(1 - (power / maxpower));
+        spriteBatch.Begin(effect: fx, samplerState: SamplerState.PointClamp);
 
         circleMesh.Draw();
 
         spriteBatch.End();
-    }
-
-    public override void Dispose()
-    {
-        fx.Dispose();
     }
 }

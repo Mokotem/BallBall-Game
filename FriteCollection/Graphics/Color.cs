@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using FriteCollection.Entity;
 
 namespace FriteCollection.Graphics
@@ -185,10 +186,6 @@ namespace FriteCollection.Graphics
         public static readonly Color White = new Color(1, 1, 1);
         public static readonly Color Black = new Color(0, 0, 0);
 
-        public static Color operator * (Color c1, float m)
-        { return new Color(c1.RGB.R * m, c1.RGB.G * m, c1.RGB.B * m); }
-        public static Color operator / (Color c1, float m)
-        { return new Color(c1.RGB.R / m, c1.RGB.G / m, c1.RGB.B / m); }
 
         public Color Copy()
         {
@@ -202,6 +199,40 @@ namespace FriteCollection.Graphics
         public Color()
         {
 
+        }
+
+        public static Color operator + (Color c1, Color c2)
+        {
+            return new Color(c1._rgb.R + c2._rgb.R, c1._rgb.G + c2._rgb.G, c1._rgb.B + c2._rgb.B);
+        }
+        public static Color operator -(Color c1, Color c2)
+        {
+            return new Color(c1._rgb.R - c2._rgb.R, c1._rgb.G - c2._rgb.G, c1._rgb.B - c2._rgb.B);
+        }
+        public static Color operator *(Color c1, Color c2)
+        {
+            return new Color(c1._rgb.R * c2._rgb.R, c1._rgb.G * c2._rgb.G, c1._rgb.B * c2._rgb.B);
+        }
+        public static Color operator /(Color c1, Color c2)
+        {
+            return new Color(c1._rgb.R / c2._rgb.R, c1._rgb.G / c2._rgb.G, c1._rgb.B / c2._rgb.B);
+        }
+
+        public static Color operator +(Color c1, float c2)
+        {
+            return new Color(c1._rgb.R + c2, c1._rgb.G + c2, c1._rgb.B + c2);
+        }
+        public static Color operator -(Color c1, float c2)
+        {
+            return new Color(c1._rgb.R - c2, c1._rgb.G - c2, c1._rgb.B - c2);
+        }
+        public static Color operator *(Color c1, float c2)
+        {
+            return new Color(c1._rgb.R * c2, c1._rgb.G * c2, c1._rgb.B * c2);
+        }
+        public static Color operator /(Color c1, float c2)
+        {
+            return new Color(c1._rgb.R / c2, c1._rgb.G / c2, c1._rgb.B / c2);
         }
 
         /// <summary>

@@ -1,26 +1,66 @@
 ﻿using FriteCollection.Entity;
 using FriteCollection.Math;
 using FriteCollection.Scripting;
-using SharpDX.Direct3D9;
 
 namespace RocketLike;
 
 public class Ball : Script
 {
+    private const ushort vitesseGolden = 290;
+    private const ushort vitesseCyan = 350;
+    private States state = States.None;
+
+
+    public delegate void MarqueEvent(bool sideRight, States ballState);
+    public delegate void FrappeEvent(Vector direction, States ballState);
+    public event MarqueEvent BUT;
+    public event FrappeEvent FRAPPE;
+
+
+    public enum States
+    {
+        None, Golden, Cyan
+    }
+
     public Ball() : base(Scenes.Game) { }
-    public Object b = new Object();
+    public Object b;
     HitBox.Rectangle hit;
     HitBox.Rectangle hitGoal;
     Vector vitesse = Vector.Zero;
-    public static Microsoft.Xna.Framework.Graphics.Texture2D texture;
-    private Manager manager;
+    public Microsoft.Xna.Framework.Graphics.Texture2D texture;
 
-    System.Random rand;
+    private static bool active = true;
+    public static bool Active => active;
+
+    private bool gravity = false;
+
+
+    public void Desactiver()
+    {
+        b.Renderer.hide = true;
+        hit.Active = false;
+        hitGoal.Active = false;
+        active = false;
+        gravity = false;
+    }
+    public void Activer()
+    {
+        b.Renderer.hide = false;
+        hit.Active = true;
+        hitGoal.Active = true;
+        active = true;
+        b.Space.Position = new Vector(0, 32);
+        b.Space.Scale = new Vector(12, 12);
+        vitesse = Vector.Zero;
+        state = States.None;
+        gravity = false;
+    }
 
     public override void Start()
     {
-        manager = GameManager.GetScript("Manager") as Manager;
-        Layer = 2;
+        (GameManager.GetScript("StartAnimation") as StartAnimation).START += start;
+        b = new Object();
+        Layer = 12;
         texture = Open.Texture("Game/Circle");
         b.Renderer.Texture = texture;
         hit = new HitBox.Rectangle(b.Space);
@@ -28,19 +68,18 @@ public class Ball : Script
         hitGoal = new HitBox.Rectangle(b.Space);
         hitGoal.LockSize = new Vector(12, 12);
         hitGoal.Layer = 1;
-        vitesse = new Vector(150, 100);
-        rand = new System.Random();
+        Activer();
     }
+
+    void start() { gravity = true; }
 
     public void Collide(Vector point, Vector _vitesse)
     {
-        Microsoft.Xna.Framework.Input.Keyboard.GetState();
-
         float force = Math.Sqrt((vitesse.x * vitesse.x) + (vitesse.y * vitesse.y));
         float angle = Math.Atan(point, b.Space.Position);
-        float result = (100 + (force * 0.3f));
-        vitesse.x = Math.Cos(angle) * result;
-        vitesse.y = Math.Sin(angle) * result;
+        float result = (105 + (force * 0.3f));
+        Vector dir = new Vector(Math.Cos(angle), Math.Sin(angle));
+        vitesse = dir * result;
         if (point.x < b.Space.Position.x)
             vitesse.x = Math.Abs(vitesse.x);
         else
@@ -50,46 +89,61 @@ public class Ball : Script
         else
             vitesse.y = -Math.Abs(vitesse.y);
         vitesse += _vitesse / 1.5f;
-        canClone = true;
+
+        float vit = NormeVitesse;
+        if (vit >= vitesseGolden)
+        {
+            vitesse *= 1.1f;
+            if (vit >= vitesseCyan && (state == States.Golden || state == States.Cyan))
+            {
+                state = States.Cyan;
+                vitesse *= 1.1f;
+            }
+            else state = States.Golden;
+            canClone = true;
+            new ParticleWink(ref b.Space.Position);
+            FRAPPE(dir, state);
+        }
+        else
+            canClone = false;
     }
 
-    private const float deceleration = 0.9f;
+    private const float deceleration = 0.8f;
+    private float partTimer = 0f;
 
     private void Collisions()
     {
         if (hitGoal.Check(out HitBox.Sides s, out HitBox c, out ushort nombre))
         {
-            manager.Shake();
-            b.Space.Position = new Vector(0, 16 * 3);
+            if (BUT is not null) BUT(b.Space.Position.x > 0, state);
             vitesse = new Vector(0, 0);
+            Desactiver();
+            new Sequence(() => 4f, () => { Activer(); return 0; });
             return;
         }
 
-        if (b.Space.Position.x >= Manager.walls)
+        if (b.Space.Position.x >= PlayerManager.walls)
         {
-            b.Space.Position.x = Manager.walls;
+            b.Space.Position.x = PlayerManager.walls;
             vitesse.x *= -deceleration;
         }
-        if (b.Space.Position.x <= -Manager.walls)
+        if (b.Space.Position.x <= -PlayerManager.walls)
         {
-            b.Space.Position.x = -Manager.walls;
+            b.Space.Position.x = -PlayerManager.walls;
             vitesse.x *= -deceleration;
         }
-        if (b.Space.Position.y < Manager.floor)
+        if (b.Space.Position.y < PlayerManager.floor)
         {
-            b.Space.Position.y = Manager.floor;
+            b.Space.Position.y = PlayerManager.floor;
             vitesse.y *= -deceleration;
-            if (Math.Abs(vitesse.y) < 150 && Math.Abs(vitesse.x) < 100)
+            if (Math.Abs(vitesse.y) < 120 && Math.Abs(vitesse.x) < 120)
             {
-                vitesse.y = 150;
+                vitesse.y = 120;
             }
-            else if (Math.Abs(vitesse.y) < 5)
-                vitesse.y = 0;
-
         }
-        if (b.Space.Position.y > Manager.roof)
+        if (b.Space.Position.y > PlayerManager.roof)
         {
-            b.Space.Position.y = Manager.roof;
+            b.Space.Position.y = PlayerManager.roof;
             vitesse.y *= -deceleration;
         }
 
@@ -106,9 +160,9 @@ public class Ball : Script
                         b.Space.Position.y =
                             collider.PositionOffset.y + ((collider.LockSize.y + hit.LockSize.y) / 2f);
                         vitesse.y *= -deceleration;
-                        if (Math.Abs(vitesse.y) < 150 && Math.Abs(vitesse.x) < 100)
+                        if (Math.Abs(vitesse.y) < 120 && Math.Abs(vitesse.x) < 120)
                         {
-                            vitesse.y = 150;
+                            vitesse.y = 120;
                         }
                         break;
 
@@ -141,40 +195,66 @@ public class Ball : Script
                 vitesse = Vector.Zero;
                 ncolliders = 0;
             }
-
         }
     }
     bool canClone = false;
     float timer = 0f;
 
+    private float NormeVitesse => Math.Sqrt((vitesse.x * vitesse.x) + (vitesse.y * vitesse.y));
+
     public override void AfterUpdate()
     {
-        vitesse.y += -Manager.GRAVITY * Time.FrameTime * 0.5f;
-        b.Space.Position += vitesse * Time.FrameTime * 0.5f;
-        Collisions();
-        vitesse.y += -Manager.GRAVITY * Time.FrameTime * 0.5f;
-        b.Space.Position += vitesse * Time.FrameTime * 0.5f;
-        float scale = Math.Sqrt((vitesse.x * vitesse.x) + (vitesse.y * vitesse.y));
-        b.Space.Scale = new Vector(12 - (scale / 150), 12 + (scale / 150));
-        b.Space.rotation = -Math.Atan(vitesse.y / vitesse.x) + 90;
-        b.Renderer.Color = Pico8.White;
-        if (Math.Sqrt((vitesse.x * vitesse.x) + (vitesse.y * vitesse.y)) > 220)
+        if (active)
         {
-            timer += Time.FrameTime;
+            float scale = NormeVitesse;
+
+            if (gravity)
+            {
+                vitesse.y += -PlayerManager.GRAVITY * Time.FrameTime * 1f;
+            }
+            else vitesse = new Vector(0, 0);
+            b.Space.Position += vitesse * Time.FrameTime * 1f;
+            Collisions();
+            b.Space.Scale = new Vector(12 - (scale / 150), 12 + (scale / 150));
+            if (vitesse.x != 0)
+            {
+                b.Space.rotation = -Math.Atan(vitesse.y / vitesse.x) + 90;
+            }
+            else
+            {
+                b.Space.rotation = 0;
+            }
+            b.Renderer.Color = Pico8.White;
             if (canClone)
             {
-                b.Renderer.Color = Pico8.Yellow;
-                if (timer > 0.025f)
+                timer += Time.FrameTime;
+                if (state == States.Cyan)
                 {
-                    new ParticleBall(b.Space);
+                    partTimer += Time.FrameTime;
+                    b.Renderer.Color = Pico8.Pink;
+                    if (partTimer > 0.1f)
+                    {
+                        partTimer = 0f;
+                        new ParticleFlaque(ref b.Space.Position, 12);
+                    }
+                }
+                else
+                {
+                    b.Renderer.Color = Pico8.Yellow;
+                }
+                if (timer > 0.01f)
+                {
+                    new ParticleBall(ref b.Space.Position, ref vitesse, ref b.Renderer.Color);
                     timer = 0f;
                 }
             }
-        }
-        else
-        {
-            timer = 1f;
-            canClone = false;
+            if (state == States.Cyan ? scale < vitesseCyan / 2f : scale < vitesseGolden / 1.5f)
+            {
+                partTimer = 0f;
+                timer = 1f;
+                canClone = false;
+                state = States.None;
+            }
         }
     }
 

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Diagnostics.Eventing.Reader;
-using System.Numerics;
 
 namespace FriteCollection.Math
 {
@@ -26,21 +24,21 @@ namespace FriteCollection.Math
         /// </summary>
         public static float Sin(float d)
         {
-            return MathF.Sin(d * (MathF.PI / 180));
+            return MathF.Sin(d * (MathF.PI / 180f));
         }
         /// <summary>
         /// En degrés.
         /// </summary>
         public static float Cos(float d)
         {
-            return MathF.Cos(d * (MathF.PI / 180));
+            return MathF.Cos(d * (MathF.PI / 180f));
         }
         /// <summary>
         /// En degrés.
         /// </summary>
         public static float Tan(float d)
         {
-            return MathF.Tan(d * (MathF.PI / 180));
+            return MathF.Tan(d * (MathF.PI / 180f));
         }
         /// <summary>
         /// En degrés.

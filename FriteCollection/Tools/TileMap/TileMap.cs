@@ -3,7 +3,6 @@ using FriteCollection.Scripting;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using System.Windows.Forms;
 
 namespace FriteCollection.Tools.TileMap;
 
@@ -108,7 +107,6 @@ public class TileSet : IDisposable
         }
     }
 
-    //Quotient
     public Rectangle GetRectangle(int index)
     {
         Vector positon = new Vector
@@ -131,7 +129,7 @@ public class TileSet : IDisposable
     }
 }
 
-public class TileMap
+public class TileMap : IDisposable
 {
     int xCount;
     int yCount;
@@ -140,7 +138,6 @@ public class TileMap
 
     public TileMap(TileSet sheet,
         OgmoFile file,
-        float? sizeFactor = null,
         Graphics.Color background = null,
         Texture2D backgroundTexture = null,
         bool mergeHitBoxes = true)
@@ -152,11 +149,6 @@ public class TileMap
             bg = background;
         }
         else { bg = new(0, 0, 0); }
-        if (sizeFactor != null)
-        {
-            _scalefactor = sizeFactor.Value;
-        }
-        else { _scalefactor = 1; }
         _sheet = sheet;
         _file = file;
 
@@ -173,7 +165,7 @@ public class TileMap
         );
 
         FriteModel.MonoGame.instance.GraphicsDevice.SetRenderTarget(_renderTarget);
-        FriteModel.MonoGame.instance.GraphicsDevice.Clear(new Microsoft.Xna.Framework.Color(bg.RGB.R, bg.RGB.G, bg.RGB.B));
+        FriteModel.MonoGame.instance.GraphicsDevice.Clear(Microsoft.Xna.Framework.Color.Transparent);
         batch.Begin(samplerState: SamplerState.PointClamp);
         if (backgroundTexture != null)
         {
@@ -184,7 +176,7 @@ public class TileMap
                 xCount * sheet.TileSize.width,
                 yCount * sheet.TileSize.height),
                 null,
-                new Microsoft.Xna.Framework.Color(bg.RGB.R, bg.RGB.G, bg.RGB.B)
+                new Color(bg.RGB.R, bg.RGB.G, bg.RGB.B)
             );
         }
 
@@ -217,7 +209,7 @@ public class TileMap
                                 sheet.TileSize.height
                             ),
                             sheet.GetRectangle(layer.data[i]),
-                            Color.White
+                            Microsoft.Xna.Framework.Color.White
                         );
                     }
                     else
@@ -234,13 +226,13 @@ public class TileMap
                             (
                             -(file.width / 2f) + (layer.gridCellWidth / 2f),
                                 (file.height / 2f) - (layer.gridCellHeight / 2f)
-                            ) * _scalefactor;
+                            );
                             Entity.Object obj = sheet.ReplaceEntity[x, y].Copy();
-                            obj.Space.Position += this.Space.Position;
+                            obj.Space.Position += Position;
                             obj.Space.GridOrigin = Bounds.Center;
                             obj.Space.Position += pos;
-                            obj.Space.Position.x += x % (file.width / layer.gridCellWidth) * layer.gridCellWidth * _scalefactor;
-                            obj.Space.Position.y -= System.Math.DivRem(x * layer.gridCellWidth, file.width).Quotient * sheet.TileSize.height * _scalefactor;
+                            obj.Space.Position.x += x % (file.width / layer.gridCellWidth) * layer.gridCellWidth;
+                            obj.Space.Position.y -= System.Math.DivRem(x * layer.gridCellWidth, file.width).Quotient * sheet.TileSize.height;
                             obj.Renderer.hide = false;
                             sheet.entities.Add(obj);
                         }
@@ -264,14 +256,13 @@ public class TileMap
                     {
                         HitBox.Rectangle hit = _hitboxData[x, y].Copy();
                         hit.Active = true;
-                        hit.Space = this.Space;
                         hit.PositionOffset += new Entity.Vector
                         (
                             -(_file.width / 2f) + (_sheet.TileSize.width / 2f),
                             (_file.height / 2f) - (_sheet.TileSize.height / 2f)
-                        ) * _scalefactor;
-                        hit.PositionOffset.x += x * _sheet.TileSize.width * _scalefactor;
-                        hit.PositionOffset.y -= y * _sheet.TileSize.height * _scalefactor;
+                        );
+                        hit.PositionOffset.x += x * _sheet.TileSize.width;
+                        hit.PositionOffset.y -= y * _sheet.TileSize.height;
                         hit.LockSize = new Entity.Vector(
                             _hitboxData[x, y].LockSize.x,
                             _hitboxData[x, y].LockSize.y);
@@ -279,9 +270,7 @@ public class TileMap
                 }
             }
         }
-
-        _bounds = _boundFunc.CreateBounds(file.width, file.height);
-        Space.Scale = new(file.width, file.height);
+        Color = Graphics.Color.White;
     }
 
     public Entity.Vector GetPos(ushort i, ushort j)
@@ -297,7 +286,7 @@ public class TileMap
                         (
                            (k % xCount) * _sheet.TileSize.width - (_file.width - _sheet.TileSize.width) / 2f,
                            -(k / xCount) * _sheet.TileSize.height + (_file.height + _sheet.TileSize.height) / 2f
-                        ) * _scalefactor;
+                        );
                 }
             }
         }
@@ -362,14 +351,13 @@ public class TileMap
                 HitBox.Rectangle hit = hit1.Copy();
                 hit.Layer = hit1.Layer;
                 hit.Active = true;
-                hit.Space = this.Space;
                 hit.PositionOffset += new Entity.Vector
                 (
                     -(_file.width / 2f) + (_sheet.TileSize.width / 2f),
                     (_file.height / 2f) - (_sheet.TileSize.height / 2f)
-                ) * _scalefactor;
-                hit.PositionOffset.x += (x + ((width - 1) / 2f)) * _sheet.TileSize.width * _scalefactor;
-                hit.PositionOffset.y -= (y + ((height - 1) / 2f)) * _sheet.TileSize.height * _scalefactor;
+                );
+                hit.PositionOffset.x += (x + ((width - 1) / 2f)) * _sheet.TileSize.width;
+                hit.PositionOffset.y -= (y + ((height - 1) / 2f)) * _sheet.TileSize.height;
                 hit.LockSize = new Entity.Vector(
                     hit1.LockSize.x * width,
                     hit1.LockSize.y * height);
@@ -394,32 +382,28 @@ public class TileMap
         }
     }
 
-    private float _scalefactor;
-
     private BoundFunc _boundFunc = new();
-    private Entity.Vector[] _bounds;
 
-    public Space Space = new();
+    public Entity.Vector Position;
+
+    public Graphics.Color Color { get; set; }
 
     public void Draw()
     {
-        Space.CenterPoint = Bounds.Center;
-        Entity.Vector entPosi = Space.GetScreenPosition();
-
         FriteModel.MonoGame.instance.SpriteBatch.Draw
         (
             _renderTarget,
             new Microsoft.Xna.Framework.Rectangle
             (
-                (int)entPosi.x,
-                (int)entPosi.y,
-                (int)(_file.width * _scalefactor * Camera.zoom),
-                (int)(_file.height * _scalefactor * Camera.zoom)
+                (int)(Position.x - Camera.Position.x),
+                (int)(Position.y + Camera.Position.y),
+                (int)(_file.width),
+                256
             ),
             null,
-            Color.White,
+            new Microsoft.Xna.Framework.Color(Color.RGB.R, Color.RGB.G, Color.RGB.B),
             0,
-            _bounds[(int)Space.CenterPoint].ToVector2(),
+            Vector2.Zero,
             SpriteEffects.None,
             0
         );
@@ -428,6 +412,11 @@ public class TileMap
         {
             obj.Draw();
         }
+    }
+
+    public void Dispose()
+    {
+        _renderTarget.Dispose();
     }
 }
 

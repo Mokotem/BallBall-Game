@@ -7,19 +7,52 @@ namespace RocketLike
     {
         public void SetGameSettings()
         {
-            Settings.WindowWidth = 384 * 3;
-            Settings.WindowHeight = 256 * 3;
-            Settings.GameFixeWidth = 384 + 16 * 4;
-            Settings.GameFixeHeight = 256;
+            Settings.GameFixeWidth = 480;
+            Settings.GameFixeHeight = 270;
             Settings.FPS = 165;
-            Settings.StartScene = Scenes.Game;
+            Settings.StartScene = Scenes.Menu;
             Settings.FullScreen = true;
+        }
+    }
+    public class GameData
+    {
+        public static uint sp1 = 0, sp2 = 0;
+    }
+
+    public delegate float Task(); // retourne le delai
+
+
+    public class Sequence : Clone
+    {
+        private readonly Task[] _tasks;
+        public Sequence(params Task[] tasks)
+        {
+            _tasks = tasks;
+        }
+
+        float timer = -1;
+        uint i = 0;
+
+        public override void Update()
+        {
+            if (i < _tasks.Length)
+            {
+                if (timer < 0)
+                {
+                    timer = _tasks[i]();
+                    i++;
+                }
+                else
+                    timer += -Time.FixedFrameTime;
+            }
+            else
+                Destroy();
         }
     }
 
     public enum Scenes
     {
-        Game
+        Game, Menu
     }
 
     public abstract class Pico8

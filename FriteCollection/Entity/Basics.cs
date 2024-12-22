@@ -2,8 +2,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 
 namespace FriteCollection.Entity
 {
@@ -99,6 +97,8 @@ namespace FriteCollection.Entity
             Scale = new Vector(50, 50);
             rotation = 0;
         }
+
+        public bool LockCamera = false;
 
         public Space Copy()
         {
