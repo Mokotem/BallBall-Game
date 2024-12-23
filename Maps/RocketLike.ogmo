@@ -1,0 +1,43 @@
+{
+  "name": "RocketLike",
+  "ogmoVersion": "3.4.0",
+  "levelPaths": ["."],
+  "backgroundColor": "#000000ff",
+  "gridColor": "#0000003b",
+  "anglesRadians": false,
+  "directoryDepth": 5,
+  "layerGridDefaultSize": {"x": 4, "y": 4},
+  "levelDefaultSize": {"x": 320, "y": 240},
+  "levelMinSize": {"x": 480, "y": 256},
+  "levelMaxSize": {"x": 480, "y": 256},
+  "levelValues": [],
+  "defaultExportMode": ".json",
+  "compactExport": false,
+  "externalScript": "",
+  "playCommand": "",
+  "entityTags": [],
+  "layers": [
+    {
+      "definition": "tile",
+      "name": "gameplay",
+      "gridSize": {"x": 16, "y": 16},
+      "exportID": "38233127",
+      "exportMode": 0,
+      "arrayMode": 0,
+      "defaultTileset": "tileset"
+    },
+    {
+      "definition": "tile",
+      "name": "hitboxes",
+      "gridSize": {"x": 16, "y": 16},
+      "exportID": "38238630",
+      "exportMode": 0,
+      "arrayMode": 0,
+      "defaultTileset": "New Tileset"
+    }
+  ],
+  "entities": [],
+  "tilesets": [
+    {"label": "tileset", "path": "../../../../Content/Game/MapManager/tileSet.png", "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAD+CAYAAAB4FVZ+AAAAAXNSR0IArs4c6QAABSlJREFUeJztnb1uFDEUhe+g1DwB0KWK6NC21AhtkawSCgoahHgAhECCFIAUhHgAFNEgRMHPkiKKqGkj2hVFOpIn4AVMwU4y2bU9tq9n94xzPglp2Kwtn7nXP3d9x1OZX1+MKKhubFUIdayIiLz68ldTh7q8to5nW5dlRX5vye7BSNWI3YMfqvLaOp5dH8sldQtAKEbIiu3DB7dvBVfwfDKO+n6OOmxuaBXi+nKO72rrcAl2CvEVarJIi/jEFtNHKAQNCkGDQtAoRkgxVOajmGuvzy/jH9y+JbsHP8Jm9jf3q5eP36uCotA66jbNzvB/nnAZjweFoEEhaFAIGhSCBoWgQSFoFCNERESuro3M1bWRKqZYNgys0KAQNCgEDQpBoxgh3j3E0A3KZScMiHiEhG5wLmN72oZVSOzdQbBIMX2kGCHydWNgRETzT5Tl1XV83RiYlamY5Bux+f1QVT5XHcWwsKCorY4sqYAopKYD/k8FREGRkshUQESKEQLTR77tDeR4Mk4uCyNERDcxwwjZ/H5YacoHCWlbYvv+ro0zQgm2iKtBvqAoR5wSSpRruRpm+3xRlqgpZvilEBE5HfdTx/+cqITU4z6Doozodoo+3Dl9Puravc/n/ha767XUwKoOhHI8Y6WtRyWktlCWiU/5rBeHXzSiXMvWcXP8AJ2DYCG+fpCjj2gCK5FAIb47ntMiDKykoM5OIWhQCBoUQjpCNQnlpJgdK+3hFTAW0WS5XpDkzJ31bHnA26vd5xTbhWQUUdO1mPnO3oGImu3VkXlxNLb2S01Q9W1vMNPZQ0U83XMOEiF33iZmmhOTDMzwqw2s5gs3reK58zE0reRyLS3znT1T4210JcJPz4ZfQsgFAWYZz8BqCoxFtI8PXoDAqmcUIwSmj8hZjnwS86PWSUuAc6U9bjAy9NZRyb4tsGqr1gvM8MsdqykUggaFoFGMEIJG1TqTt3HlsGqbydsbsV8ZGZp6xk+5hukjGhH/r08GJskqjXJGhibFKrPlNNcwFqFrTa9hhIjorAIjhK6F6Foi56PHmGs4IalQCBoUggaFkM4AWcZrl/MwrlXUEoWrX7pWR9C16FodQdeia3UEXYuu1RF0rYQQAhiQwGoWXyKa7W8wrqUFJqnGRkx6IKyQ40ncAwGwQmpmreIS2Is+cjwZV20W6oWQECgEDQpBg0LQKEbI2cyuzduS5cYFxVikIJou5brOQMjOk43mojFsWQ8oQiRWiKvhmQWlECrkkpwMjPWZENfnibjufq9+AdGICLeISOeuZXuCx/d5CnStGOhaEdC1YqBrRUDXimE5rtXB4tG2IdPcqMlDcct40i1xfaQAKAQNCkGDQtAIX6K0zPqalPA8aEQ0UjjaGou7RFnQr/d5AisfM7FKiqt0t/pNLKvx91x9Jf2OZIggfTFJW3+wZ0IAjlqx+Vqwo1a8kELIOGro0L5kuLAlSgH4heysG+1xudurI6M9JvfmcE1uDte83+mVRXxvZ+qVEB/FCIHMMnX1h0/vHp37/8/9yel1ry3S7DPzE2LbKBVwinnbKGU7rXx2Qmw2srbE3Ydv5+qq32o271pP9yqnmMCj2F8cjSuXmNAj112vXXN9bnctW4Mjz5O3NbjLc+PdfaTZ8MRD8ZsN7/rw+94sGus+43ItyOHXRturCns9/BJCCCFkhrPTZTOmNC2UafuLWaJQCBoUgkaWM7ER6ijGIoQQQggRkdNXbuTNnVocdfuLWaJQCBoUgka2FwUtu45iLPIPbTi5Pc3EVHAAAAAASUVORK5CYII=", "tileWidth": 16, "tileHeight": 16, "tileSeparationX": 1, "tileSeparationY": 1, "tileMarginX": -1, "tileMarginY": -1}
+  ]
+}
