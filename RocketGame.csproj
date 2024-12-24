@@ -21,7 +21,6 @@
   <ItemGroup>
     <Folder Include="Content\bin\Windows\Content\" />
     <Folder Include="Content\obj\Windows\net6.0-windows\Content\" />
-    <Folder Include="Content\Shaders\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="RocketLike\Menu\Menu.cs" />

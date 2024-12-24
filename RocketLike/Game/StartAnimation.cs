@@ -1,7 +1,6 @@
 ﻿using FriteCollection.Entity;
 using FriteCollection.Scripting;
 using System;
-using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace RocketLike;
 
@@ -82,17 +81,21 @@ public class Num : Clone
             if (timer < dt)
             {
                 t.Space.Position.x = ((Screen.widht / 2f) + 30) * (1 - (timer / dt));
+                t.Renderer.Alpha = timer / 0.25f;
             }
             else if (timer >= dt && timer <= 3 * dt)
             {
                 t.Space.Position.x = 0;
+                t.Renderer.Alpha = 1;
             }
             else
             {
                 t.Space.Position.x = target * ((timer - (dt * 3)) / dt);
+                t.Renderer.Alpha = (1f - timer) / 0.25f;
             }
             if (timer > 1)
                 Destroy();
+            t.Space.Position.x += -3;
         }
     }
 

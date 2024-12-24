@@ -464,7 +464,7 @@ namespace FriteCollection.UI
                 for (int i = 0; i < txt.Length; i++)
                 {
                     result += txt[i] + (i == txt.Length - 1 ? "" : " ");
-                    if ((result + (i + 1 < txt.Length ? txt[i + 1] : "")).Length * 5
+                    if ((result + (i + 1 < txt.Length ? txt[i + 1] : "")).Length * 4
                         > rect.Width)
                     {
                         text += result + (i == txt.Length - 1 ? "" : "\n");
@@ -476,12 +476,11 @@ namespace FriteCollection.UI
             space.Scale.j = 0;
 
             if ((int)space.Origin % 3 == 1)
-                rect.Width = (int)text.Length * 5;
+                rect.Width = (int)(input.Length * 4);
             if ((int)space.Origin / 3 == 1)
-                rect.Height = (int)GameManager.GameFont.MeasureString(text).Y;
+                rect.Height = 12;
 
-            if (text == "")
-                text = input;
+            text = input;
         }
 
         public Text(string txt, Space space)

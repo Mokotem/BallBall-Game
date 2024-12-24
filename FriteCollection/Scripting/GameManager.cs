@@ -110,7 +110,7 @@ public abstract class SaveManager
 {
     private static readonly string path = Path.Combine
         (Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        @"FriteCollection\Save_" + Assembly.GetAssembly(typeof(Settings)).FullName + ".json");
+        @"FriteCollection\Save_BallBallGame.json");
 
     public static string SavePath
     {
@@ -133,6 +133,12 @@ public abstract class SaveManager
         string save = JsonConvert.SerializeObject(_struct);
         using (StreamWriter sw = new StreamWriter(path))
             sw.Write(save);
+    }
+
+    public static void Delete()
+    {
+        if (File.Exists(path))
+        File.Delete(path);
     }
 
     public static T Load<T>()

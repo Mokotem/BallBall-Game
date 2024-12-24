@@ -13,6 +13,12 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin Game/587501_Last-Tile-.mp3
+/importer:Mp3Importer
+/processor:SongProcessor
+/processorParam:Quality=Best
+/build:Game/587501_Last-Tile-.mp3
+
 #begin Game/Circle.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -80,6 +86,60 @@
 /processorParam:TextureFormat=Color
 /build:Game/ui.png
 
+#begin Sfx/foot.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sfx/foot.wav
+
+#begin Sfx/goldbut.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sfx/goldbut.wav
+
+#begin Sfx/golden.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sfx/golden.wav
+
+#begin Sfx/golden2.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sfx/golden2.wav
+
+#begin Sfx/jet.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sfx/jet.wav
+
+#begin Sfx/none.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sfx/none.wav
+
+#begin Sfx/nonebut.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sfx/nonebut.wav
+
+#begin Sfx/red.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sfx/red.wav
+
+#begin Sfx/redbut.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sfx/redbut.wav
+
 #begin Shaders/Bulge.fx
 /importer:EffectImporter
 /processor:EffectProcessor
@@ -110,11 +170,17 @@
 /processorParam:DebugMode=Auto
 /build:Shaders/Glitch.fx
 
-#begin Shaders/ShaderTahLesFous.fx
+#begin Shaders/Gradient.fx
 /importer:EffectImporter
 /processor:EffectProcessor
 /processorParam:DebugMode=Auto
-/build:Shaders/ShaderTahLesFous.fx
+/build:Shaders/Gradient.fx
+
+#begin Shaders/ShockWave2.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/processorParam:DebugMode=Auto
+/build:Shaders/ShockWave2.fx
 
 #begin Shaders/Wave.fx
 /importer:EffectImporter

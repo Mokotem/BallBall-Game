@@ -17,6 +17,8 @@ namespace RocketLike
     public class GameData
     {
         public static uint sp1 = 0, sp2 = 0;
+        public static STATS STATS;
+        public static bool firstConnection = true;
     }
 
     public delegate float Task(); // retourne le delai
@@ -33,7 +35,7 @@ namespace RocketLike
         float timer = -1;
         uint i = 0;
 
-        public override void Update()
+        public override void BeforeUpdate()
         {
             if (i < _tasks.Length)
             {

@@ -10,6 +10,8 @@
 Texture2D SpriteTexture;
 float volume;
 float value;
+float cx;
+float cy;
 
 sampler2D SpriteTextureSampler = sampler_state
 {
@@ -25,15 +27,23 @@ struct VertexShaderOutput
 
 float4 MainPS(VertexShaderOutput input) : COLOR
 {
+	if (value > 0.5)
+    {
+        value = 0.5;
+    }
+    if (value < 0)
+    {
+        value = 0;
+    }
 	float4 color = tex2D(SpriteTextureSampler, input.TextureCoordinates);
     float2 pos = input.TextureCoordinates;
 	
-    float thing = pow(0.5 - pos.r, 2) + pow(0.5 - pos.g, 2);
+    float thing = pow(cx - pos.r, 2) + pow(cy - pos.g, 2);
     float dist = sqrt(thing);
     float mult = pow(dist, 2) * value;
 	
-    pos.r += (0.5 - pos.r) * mult;
-    pos.g += (0.5 - pos.g) * mult;
+    pos.r += (cx - pos.r) * mult;
+    pos.g += (cy - pos.g) * mult;
 	
     return (tex2D(SpriteTextureSampler, pos) * volume)
 	+ (tex2D(SpriteTextureSampler, input.TextureCoordinates) * (1 - volume));

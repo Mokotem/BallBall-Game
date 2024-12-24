@@ -3,6 +3,7 @@ using FriteCollection.Scripting;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Linq;
 
 namespace FriteCollection.Tools.TileMap;
 
@@ -273,8 +274,9 @@ public class TileMap : IDisposable
         Color = Graphics.Color.White;
     }
 
-    public Entity.Vector GetPos(ushort i, ushort j)
+    public List<Entity.Vector> GetPos(ushort i, ushort j)
     {
+        List<Entity.Vector> result = new List<Entity.Vector>();
         int target = i + (j * _sheet.Xlenght);
         foreach (OgmoLayer layer in _file.layers)
         {
@@ -282,16 +284,16 @@ public class TileMap : IDisposable
             {
                 if (layer.data[k] == target)
                 {
-                    return new Entity.Vector
+                    result.Add(new Entity.Vector
                         (
                            (k % xCount) * _sheet.TileSize.width - (_file.width - _sheet.TileSize.width) / 2f,
                            -(k / xCount) * _sheet.TileSize.height + (_file.height + _sheet.TileSize.height) / 2f
-                        );
+                        ));
                 }
             }
         }
 
-        return Entity.Vector.Zero;
+        return result;
     }
 
     private List<HitBox.Rectangle> MergeHitBoxes(ref HitBox.Rectangle[,] lst)

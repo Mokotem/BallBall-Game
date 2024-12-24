@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
-using System;
+﻿using System;
 using Microsoft.Xna.Framework.Media;
+using Microsoft.Xna.Framework.Audio;
+using FriteCollection.Scripting;
 
 namespace FriteCollection.Audio
 {
@@ -14,7 +15,7 @@ namespace FriteCollection.Audio
     /// <summary>
     /// Music. (mp3, wma, ogg)
     /// </summary>
-    public class Music : Audio
+    public class Music : Audio, IDisposable
     {
         private static List<int> songIDs = new List<int>();
         private static int _playingSong;
@@ -45,7 +46,7 @@ namespace FriteCollection.Audio
         /// </summary>
         public void Start()
         {
-            MediaPlayer.IsRepeating = _loop;
+            MediaPlayer.IsRepeating = true;
             _playingSong = _ID;
             MediaPlayer.Play(_audio);
             _songState = Scripting.Time.Timer;
@@ -151,24 +152,23 @@ namespace FriteCollection.Audio
                 return _audio;
             }
         }
+
+        public void Dispose()
+        {
+            _audio.Dispose();
+        }
     }
 
     /// <summary>
     /// Sound effect. (wav)
     /// </summary>
-    public class SoundEffect : Audio
+    public class SoundEffect : Audio, IDisposable
     {
         Microsoft.Xna.Framework.Audio.SoundEffect _audio;
-        private float _pitch = 0;
-        private bool _loop = false;
         private float _volume = 1f;
+        SoundEffectInstance sfx;
 
         public static float GeneralVolume = 1f;
-
-        public bool Loop
-        {
-            set { _loop = value; }
-        }
 
         /// <summary>
         /// Creates a Sound effect. 
@@ -176,6 +176,7 @@ namespace FriteCollection.Audio
         public SoundEffect(Microsoft.Xna.Framework.Audio.SoundEffect file)
         {
             _audio = file;
+            _volume = 1f;
         }
 
         /// <summary>
@@ -190,19 +191,20 @@ namespace FriteCollection.Audio
         /// <summary>
         /// Plays the sound.
         /// </summary>
-        public void Play()
+        public void Play(bool loop = false)
         {
-            _audio.Play(pitch: _pitch, volume: _volume * GeneralVolume, pan: 0); 
+            sfx = _audio.CreateInstance();
+            sfx.IsLooped = loop;
+            sfx.Volume = _volume;
+            sfx.Pitch = (RocketLike.PlayerManager.random.NextSingle() - 0.5f) / 2f;
+            sfx.Play();
         }
 
-        /// <summary>
-        /// Sound frequency (-1f to 1f).
-        /// </summary>
-        public float Pitch
+        public void Stop()
         {
-            set
+            if (sfx is not null)
             {
-                _pitch = MathF.Max(-1f, MathF.Min(value, 1f));
+                sfx.Stop();
             }
         }
 
@@ -214,7 +216,18 @@ namespace FriteCollection.Audio
             set
             {
                 _volume = MathF.Max(0, MathF.Min(value, 1f));
+                if (sfx is not null)
+                {
+                    sfx.Volume = value;
+                }
             }
+        }
+
+        public void Dispose()
+        {
+            _audio.Dispose();
+            if (sfx is not null)
+                sfx.Dispose();
         }
     }
 }

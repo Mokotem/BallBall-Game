@@ -146,6 +146,14 @@ public class List<T> : IEnumerable, ICopy<List<T>>
         return list;
     }
 
+    public static List<T> operator + (List<T> a, List<T> b)
+    {
+        List<T> r = a.Copy();
+        foreach (T t in b)
+            r.Add(t);
+        return r;
+    }
+
     private T[] _values = new T[0];
 
     public List(params T[] elements)
@@ -312,6 +320,11 @@ public class List<T> : IEnumerable, ICopy<List<T>>
         }
     }
 
+    public T[] ToArray()
+    {
+        return _values;
+    }
+
     public override string ToString()
     {
         if (Count > 0)
@@ -337,19 +350,19 @@ public abstract class Executable : IDisposable
     public virtual void AfterUpdate() { }
 
     public virtual void Draw() { }
-    public virtual void Draw(SpriteBatch spriteBatch) { }
+    public virtual void Draw(ref SpriteBatch spriteBatch) { }
 
     public virtual void BeforeDraw() { }
-    public virtual void BeforeDraw(SpriteBatch spriteBatch) { }
+    public virtual void BeforeDraw(ref SpriteBatch spriteBatch) { }
 
     public virtual void AfterDraw() { }
-    public virtual void AfterDraw(SpriteBatch spriteBatch) { }
+    public virtual void AfterDraw(ref SpriteBatch spriteBatch) { }
 
     public virtual void DrawAdditive() { }
-    public virtual void DrawAdditive(SpriteBatch spriteBatch) { }
+    public virtual void DrawAdditive(ref SpriteBatch spriteBatch) { }
 
     public virtual void DrawUI() { }
-    public virtual void DrawUI(SpriteBatch spriteBatch) { }
+    public virtual void DrawUI(ref SpriteBatch spriteBatch) { }
 
     public virtual void Dispose() { }
 

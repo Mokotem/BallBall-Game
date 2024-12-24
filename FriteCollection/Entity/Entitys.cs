@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Xna.Framework;
 using FriteCollection.Scripting;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -20,11 +21,11 @@ namespace FriteCollection.Entity
         /// Draws the entity on screen.
         /// </summary>
         /// <param name="textureSpacePart">only draw a part of the texture</param>
-        public virtual void Draw(Space textureSpacePart = null) { }
+        public virtual void Draw() { }
 
-        private protected Microsoft.Xna.Framework.Color GetEntColor()
+        private protected Color GetEntColor()
         {
-            return new Microsoft.Xna.Framework.Color
+            return new Color
             (
                 Renderer.Color.RGB.R * Renderer.Alpha,
                 Renderer.Color.RGB.G * Renderer.Alpha,
@@ -48,7 +49,7 @@ namespace FriteCollection.Entity
             };
         }
 
-        public override void Draw(Space space = null)
+        public override void Draw()
         {
             if (Renderer.hide == false)
             {
@@ -90,14 +91,7 @@ namespace FriteCollection.Entity
                         (int)MathF.Abs(s.x),
                         (int)MathF.Abs(s.y)
                     ),
-                    space is null ? null :
-                    new Microsoft.Xna.Framework.Rectangle
-                    (
-                        (int)space.Position.x,
-                        (int)space.Position.y,
-                        (int)space.Scale.x,
-                        (int)space.Scale.y
-                    ),
+                    null,
                     base.GetEntColor(),
                     Space.rotation * (MathF.PI / 180f) + flipFactor,
                     Renderer.GetTextureBounds()[(int)Space.CenterPoint].ToVector2(),
@@ -144,7 +138,7 @@ namespace FriteCollection.Entity
             return t;
         }
 
-        public override void Draw(Space space = null)
+        public override void Draw()
         {
             if (Renderer.hide == false && _text != null)
             {

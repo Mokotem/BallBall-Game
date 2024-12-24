@@ -24,16 +24,18 @@ public class Cube3D : Script
         public Vector Get2DPos()
         {
             float a = b ? 1f / (z - 1.5f) : 5f / (z - 4);
-            return new Vector(x * a * (b ? 4 : 1f), y * a * (b ? 2.5f : 1f)) * (b ? 50f : 20f);
+            return new Vector(x * a * (b ? 5 : 2f), y * a * (b ? 3f : 1f)) * (b ? 50f : 20f);
         }
     }
 
-    Point[] points, points2;
-    Vector[] result, result2;
+    Point[] points;
+    Vector[] result;
     int[,] edges;
+    bool room;
 
     public override void Start()
     {
+        room = PlayerManager.random.Next(2) == 0;
         Layer = -15;
         points = new Point[8]
         {
@@ -46,18 +48,6 @@ public class Cube3D : Script
             new Point(1, 1, 1, true),
             new Point(1, -1, 1, true),
             new Point(-1, -1, 1, true)
-        };
-        points2 = new Point[8]
-        {
-            new Point(-1, 1, -1, false),
-            new Point(1, 1, -1, false),
-            new Point(1, -1, -1, false),
-            new Point(-1, -1, -1, false),
-
-            new Point(-1, 1, 1, false),
-            new Point(1, 1, 1, false),
-            new Point(1, -1, 1, false),
-            new Point(-1, -1, 1, false)
         };
         edges = new int[12, 2]
         {
@@ -97,29 +87,21 @@ public class Cube3D : Script
         return dir;
     }
 
-    public override void Update()
+    public override void AfterUpdate()
     {
         for (byte i = 0; i < 8; i++)
         {
             Vector dir;
 
             //rot Y
-            dir = MakeRot(points[i], (Point p) => p.x, (Point p) => p.z, roty);
+            dir = MakeRot(points[i], (Point p) => p.x, (Point p) => p.z, roty * (room ? 1 : -1) * 2);
             points[i].x = dir.x;
             points[i].z = dir.y;
-
-            //rot Y
-            dir = MakeRot(points2[i], (Point p) => p.x, (Point p) => p.z, -3 * roty);
-            points2[i].x = dir.x;
-            points2[i].z = dir.y;
-
         }
         result = new Vector[8];
-        result2 = new Vector[8];
         for (byte i = 0; i < 8; i++)
         {
             result[i] = points[i].Get2DPos();
-            result2[i] = points2[i].Get2DPos();
         }
     }
 
@@ -127,11 +109,10 @@ public class Cube3D : Script
     {
         for (byte i = 0; i < 12; i++)
         {
-            //if (points[edges[i, 0]].z < 0.2f || points[edges[i, 1]].z < 0.2f)
-            //{
-            //    Pen.Line(result[edges[i, 0]], result[edges[i, 1]], color: color);
-            //}
-            Pen.Line(result2[edges[i, 0]], result2[edges[i, 1]], color: color);
+            if (points[edges[i, 0]].z < 0.2f || points[edges[i, 1]].z < 0.2f)
+            {
+                Pen.Line(result[edges[i, 0]], result[edges[i, 1]], color: color);
+            }
         }
     }
 }

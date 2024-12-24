@@ -102,7 +102,7 @@ namespace FriteCollection.Tools.Pen
         /// <summary>
         /// Draws a point.
         /// </summary>
-        public static void Point(Entity.Vector v, float? thickness = null, Graphics.Color color = null)
+        public static void Point(Entity.Vector v, float? thickness = null, Graphics.Color color = null, float alpha = 1)
         {
             float th = thickness is null ? Pen.thickness : thickness.Value;
             Graphics.Color co = color is null ? Pen.Color : color;
@@ -116,7 +116,7 @@ namespace FriteCollection.Tools.Pen
                 -v.y + offset.y,
                 new Microsoft.Xna.Framework.Color
                 (
-                        co.RGB.R, co.RGB.G, co.RGB.B
+                        co.RGB.R * alpha, co.RGB.G * alpha, co.RGB.B * alpha, alpha
                 ),
                 th,
                 0

@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using FriteCollection.Math;
 using FriteCollection.Tools.Pen;
 using Microsoft.Xna.Framework.Input;
+using FriteCollection.Audio;
 
 namespace RocketLike;
 
@@ -21,6 +22,8 @@ public class PlayerManager : Script
 
     public static readonly System.Random random = new System.Random();
 
+    private SoundEffect jet;
+
     public PlayerManager() : base(Scenes.Game) { }
 
     public Player p1, p2;
@@ -33,17 +36,20 @@ public class PlayerManager : Script
     public override void Start()
     {
         sheet = new SpriteSheet(Open.Texture("Game/PlayerManager/player"), 10, 10);
+        jet = Open.SoundEffect("Sfx/jet");
+        Player.foot = Open.SoundEffect("Sfx/foot");
+        Player.foot.Volume = 0.5f;
         Player.ball = GameManager.GetScript("Ball") as Ball;
         Player.fx = FriteModel.MonoGame.instance.Content.Load<Effect>("Shaders/CircleBarr");
         Screen.backGround = Pico8.Lavender;
         Layer = 1;
-        p2 = new Player(MapManager.tilemap.GetPos(1, 6), ColorPlayer2, Color2Player2,
-            Keys.NumPad5, Keys.NumPad1, Keys.NumPad3, Keys.Left);
-        p1 = new Player(MapManager.tilemap.GetPos(0, 6), ColorPlayer1, Color2Player1,
-            Keys.Z, Keys.Q, Keys.D, Keys.S);
+        p2 = new Player(MapManager.tilemap.GetPos(1, 6)[0], ColorPlayer2, Color2Player2,
+            Keys.Up, Keys.Left, Keys.Right, Keys.RightShift, false);
+        p1 = new Player(MapManager.tilemap.GetPos(0, 6)[0], ColorPlayer1, Color2Player1,
+            Keys.R, Keys.D, Keys.G, Keys.Q, true);
         Pen.GridOrigin = Bounds.Center;
         (GameManager.GetScript("StartAnimation") as StartAnimation).START += GameStart;
-        (GameManager.GetScript("Ball") as Ball).BUT += But;
+        Player.ball.BUT += But;
     }
 
     void But(bool sideRight, Ball.States state)
@@ -75,6 +81,13 @@ public class PlayerManager : Script
         p2.locked = false;
     }
 
+    bool pre = false;
+
+    public override void BeforeUpdate()
+    {
+        Player.state = Keyboard.GetState();
+    }
+
     public override void Update()
     {
         bool p1Col = p1.CheckCollisionBall();
@@ -103,12 +116,24 @@ public class PlayerManager : Script
                 p2.Bump(p2Col);
             }
         }
+
+        if (!pre && (p1.Jetting || p2.Jetting))
+        {
+            jet.Play(loop: true);
+        }
+        else if (!p1.Jetting && !p2.Jetting)
+        {
+            jet.Stop();
+        }
+
+        pre = p1.Jetting || p2.Jetting;
     }
 
     public override void AfterUpdate()
     {
-        if (Input.KeyBoard.Escape)
+        if (Input.KeyBoard.Escape && Player.state.GetPressedKeyCount() < 2)
         {
+            GameData.STATS.tempsDeJeu += (uint)(Time.TargetTimer);
             GameManager.CurrentScene = Scenes.Menu;
         }
     }
@@ -116,26 +141,38 @@ public class PlayerManager : Script
     public override void Dispose()
     {
         p1.Dispose();
+        p2.Dispose();
         sheet.Dispose();
         Player.fx.Dispose();
+        Player.foot.Dispose();
+        jet.Dispose();
+        Player.fx = null;
+        sheet = null;
+        jet = null;
+        p1 = null;
+        p2 = null;
     }
 }
 
 public class Player : Clone
 {
     private const float cayoteTime = 0.07f;
-    private const float jumpForce = 171;
+    private const float jumpForce = 185;
     private const float vitesseXMax = 170;
     private const int radius = 26;
-    private static readonly float gravity = PlayerManager.GRAVITY * 1.5f;
+    private static readonly float gravity = PlayerManager.GRAVITY * 1.6f;
+    public static KeyboardState state;
+
+    public static SoundEffect foot;
 
     public static Ball ball;
+    private readonly bool isGreen;
 
     private Keys up, left, right, tap;
-    private bool Up => Input.IsKeyDown(up) && !locked;
-    private bool Left => Input.IsKeyDown(left) && !locked;
-    private bool Right => Input.IsKeyDown(right) && !locked;
-    private bool Tap => Input.IsKeyDown(tap) && !locked;
+    private bool Up => state.IsKeyDown(up) && !locked;
+    private bool Left => state.IsKeyDown(left) && !locked;
+    private bool Right => state.IsKeyDown(right) && !locked;
+    private bool Tap => state.IsKeyDown(tap) && !locked;
 
     private readonly Object p = new Object();
     private readonly Color circleColor;
@@ -143,8 +180,9 @@ public class Player : Clone
     private Object _lock;
     public bool locked = true;
 
-    public Player(Vector pos, Color color, Color color2, Keys up, Keys left, Keys right, Keys tap) : base()
+    public Player(Vector pos, Color color, Color color2, Keys up, Keys left, Keys right, Keys tap, bool ig) : base()
     {
+        this.isGreen = ig;
         this.up = up;
         this.left = left;
         this.right = right;
@@ -211,7 +249,12 @@ public class Player : Clone
         bumpDelay = 0.1f;
         if (collision)
         {
-            ball.Collide(p.Space.Position, vitesse);
+            ball.Collide(p.Space.Position, vitesse, isGreen);
+            GameData.STATS.nombreTirReussi++;
+        }
+        else if (Math.GetDistance(p.Space.Position, ball.b.Space.Position) < radius + 20)
+        {
+            GameData.STATS.nombreTirRate++;
         }
         vitesse = new Vector(0, 0);
     }
@@ -347,6 +390,7 @@ public class Player : Clone
         cayoteTimeCount = 1f;
         canUp = false;
         vitesse.y = jumpForce;
+        foot.Play();
     }
 
     float bumpDelay = 0f;
@@ -356,9 +400,13 @@ public class Player : Clone
     private bool CanFrappe => !lastSpace && canBump && frappeCouldown <= 0 && !locked;
     private System.Random rand = new System.Random();
     private float maxpower = 0.8f;
+    private bool jetting = false;
 
-    public override void Update()
+    public bool Jetting => jetting;
+
+    public override void BeforeUpdate()
     {
+        jetting = false;
         p.Renderer.Texture = PlayerManager.sheet[0, 0];
         frappeCouldown += -Time.FrameTime;
         vitesse.y += -gravity * Time.FrameTime;
@@ -455,6 +503,7 @@ public class Player : Clone
                 circleMesh.Renderer.hide = true;
                 if (Up && canUp && power > 0)
                 {
+                    jetting = true;
                     circleMesh.Renderer.hide = false;
                     vitesse.y += gravity * 2f * Time.FrameTime;
                     power += -Time.FrameTime;
@@ -513,13 +562,13 @@ public class Player : Clone
     float power;
     public static Effect fx;
 
-    public override void Draw(SpriteBatch spriteBatch)
+    public override void Draw(ref SpriteBatch spriteBatch)
     {
-        fx.Parameters["amount"].SetValue(1 - (power / maxpower));
+        if (Time.TargetTimer > 0.1f)
+            fx.Parameters["amount"].SetValue(1 - (power / maxpower));
         spriteBatch.Begin(effect: fx, samplerState: SamplerState.PointClamp);
 
         circleMesh.Draw();
-
         spriteBatch.End();
     }
 }
