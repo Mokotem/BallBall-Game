@@ -186,6 +186,13 @@ namespace FriteCollection.Graphics
         public static readonly Color White = new Color(1, 1, 1);
         public static readonly Color Black = new Color(0, 0, 0);
 
+        public float Average
+        {
+            get
+            {
+                return (_rgb.R + _rgb.G + _rgb.B) / 3f;
+            }
+        }
 
         public Color Copy()
         {

@@ -6,9 +6,29 @@ using FriteCollection.Tools.Pen;
 
 namespace RocketLike;
 
+public class Transition : Clone
+{
+    readonly float t;
+    public Transition()
+    {
+        GameManager.instance.scaleY = 1f;
+        t = Time.TargetTimer;
+    }
+
+    public override void Update()
+    {
+        float a = Time.TargetTimer - t;
+        GameManager.instance.scaleY = ((2 * a) - 1) * ((2 * a) - 1);
+        if (a > 0.5f)
+        {
+            Destroy();
+        }
+    }
+}
+
 public class GameEffects : Script
 {
-    public GameEffects() : base(Scenes.Game) { }
+    public GameEffects() : base(Scenes.Game, false) { }
 
     private Ball ball;
     private List<Vector> locations1, locations2;
@@ -42,7 +62,7 @@ public class GameEffects : Script
 
     private readonly System.Random random = new System.Random();
 
-    void But(bool sideRight, Ball.States state)
+    void But(bool sideRight, Ball.States state, bool csc, byte t, bool combo)
     {
         if ((int)state > 0)
             new ButShockWave(!sideRight);
@@ -87,7 +107,6 @@ public class GameEffects : Script
 
     public override void Update()
     {
-        Camera.Position = new Vector(0, MapManager.camPosY);
         if (frappeTimer > 0)
         {
             //  1f -> 0f
@@ -115,6 +134,10 @@ public class GameEffects : Script
             MapManager.tilemap.Color = Color.White;
             if (ball.Activee)
             Time.SpaceTime = 1f;
+            if (Time.TargetTimer > 3)
+            {
+                Camera.Position = new Vector(0, MapManager.camPosY);
+            }
         }
         if (timerShake > 0)
         {
@@ -123,31 +146,36 @@ public class GameEffects : Script
             timerShake += -Time.FixedFrameTime;
         }
 
-        partTimer += Time.FrameTime;
-        windTimer += Time.FrameTime;
-        if (partTimer > 0.1f)
+        if (GameData.particles)
         {
-            foreach (Vector pos in locations1)
+            partTimer += Time.FrameTime;
+            windTimer += Time.FrameTime;
+            if (partTimer > 0.1f)
             {
-                new ParticleGlow(pos, Pico8.Green);
+                foreach (Vector pos in locations1)
+                {
+                    new ParticleGlow(pos, Pico8.Green);
+                }
+                foreach (Vector pos in locations2)
+                {
+                    new ParticleGlow(pos, Pico8.Red);
+                }
+                partTimer = 0f;
             }
-            foreach (Vector pos in locations2)
-            {
-                new ParticleGlow(pos, Pico8.Red);
-            }
-            partTimer = 0f;
-        }
 
-        if (windTimer > 0.01f)
-        {
-            new WindParticle();
-            windTimer = 0f;
+            if (windTimer > 0.02f)
+            {
+                new WindParticle();
+                windTimer = 0f;
+            }
         }
     }
 
     public override void Dispose()
     {
-
+        ball = null;
+        locations1 = null;
+        locations2 = null;
     }
 }
 
@@ -179,9 +207,10 @@ public class WindParticle : Clone
 
     public override void Update()
     {
-        vitesse += acc * Time.FrameTime * 20;
-        position += vitesse * Time.FrameTime;
-        alpha += -Time.FrameTime * 0.25f;
+        float a = (isBg ? 0.5f : 1f);
+        vitesse += acc * Time.FrameTime * 20 * a;
+        position += vitesse * Time.FrameTime * a;
+        alpha += -Time.FrameTime * 0.25f * a;
         if (alpha < 0f)
             Destroy();
     }

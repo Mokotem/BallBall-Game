@@ -1,2 +1,3 @@
-﻿using FriteModel.MonoGame game = new FriteModel.MonoGame();
-game.Run();
+﻿FriteCollection.Scripting.GameManager.instance = new FriteModel.MonoGame();
+FriteCollection.Scripting.GameManager.instance.Run();
+FriteCollection.Scripting.GameManager.RESET();

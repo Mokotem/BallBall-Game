@@ -3,6 +3,7 @@ using FriteCollection.Tools.TileMap;
 using FriteCollection.Graphics;
 using FriteCollection.Entity;
 using Microsoft.Xna.Framework.Graphics;
+using Newtonsoft.Json;
 
 namespace RocketLike;
 
@@ -10,7 +11,7 @@ public class MapManager : Script
 {
     public static string map;
 
-    public MapManager() : base(Scenes.Game)
+    public MapManager() : base(Scenes.Game, false)
     {
 
     }
@@ -18,6 +19,8 @@ public class MapManager : Script
 
     private static TileSet tiles;
     Texture2D texture;
+
+    public const byte numberOfMaps = 18;
 
     private static OgmoFile ogmo;
     public static TileMap tilemap;
@@ -28,10 +31,20 @@ public class MapManager : Script
     Effect fx;
     BlendState multiplyBlend;
 
+    Object cache;
+
     public override void BeforeStart()
     {
         texture = Open.Texture("Game/MapManager/tileSet");
-        ogmo = Open.OgmoTileMap("Maps\\map" + map + ".json");
+        if (GameData.custom)
+        {
+            ogmo = GameData.file;
+            GameData.custom = false;
+        }
+        else
+        {
+            ogmo = Open.OgmoTileMap("Maps\\" + map + ".json");
+        }
         tiles = new TileSet(texture)
         {
             TileSize = new(16, 16),
@@ -58,33 +71,21 @@ public class MapManager : Script
         hitRight.Layer = 1;
         hitRight.Active = false;
 
-        HitBox.Rectangle hitBottomLeft = new HitBox.Rectangle(new Space());
-        hitBottomLeft.Active = false;
-        hitBottomLeft.Layer = 1;
-        hitBottomLeft.LockSize = new(16, 36);
-        hitBottomLeft.PositionOffset.y = -24;
-        HitBox.Rectangle hitBottomRight = new HitBox.Rectangle(new Space());
-        hitBottomRight.Layer = 1;
-        hitBottomRight.Active = false;
-        hitBottomRight.LockSize = new(16, 36);
-        hitBottomRight.PositionOffset.y = -24;
+        HitBox.Rectangle hitBottom = new HitBox.Rectangle(new Space());
+        hitBottom.Active = false;
+        hitBottom.Layer = 1;
+        hitBottom.LockSize = new(16, 18);
+        hitBottom.PositionOffset.y = -15;
 
-        HitBox.Rectangle hitHalf = new HitBox.Rectangle(new Space());
-        hitHalf.Layer = 0;
-        hitHalf.tag = "plat";
-        hitHalf.Active = false;
-        hitHalf.LockSize = new(16, 8);
-        hitHalf.PositionOffset.y = 4;
 
-        tiles.ReplaceHitbox[2, 8] = hit;
-        tiles.ReplaceHitbox[2, 7] = hitHalf;
-        tiles.ReplaceHitbox[0, 10] = hitLeft;
-        tiles.ReplaceHitbox[1, 10] = hitRight;
-        tiles.ReplaceHitbox[0, 11] = hitBottomLeft;
-        tiles.ReplaceHitbox[1, 11] = hitBottomRight;
+        tiles.ReplaceHitbox[2, 6] = hit;
+        tiles.ReplaceHitbox[0, 9] = hitLeft;
+        tiles.ReplaceHitbox[1, 9] = hitRight;
+        tiles.ReplaceHitbox[0, 11] = hitBottom;
+        tiles.ReplaceHitbox[1, 11] = hitBottom;
 
-        tiles.DontDraw(0, 6);
-        tiles.DontDraw(1, 6);
+        tiles.DontDraw(0, 5);
+        tiles.DontDraw(1, 5);
 
         tilemap = new TileMap(tiles, ogmo);
         tilemap.Position.y = 7;
@@ -101,7 +102,7 @@ public class MapManager : Script
         };
         grad.Renderer.Color = Pico8.Yellow;
 
-        fx = FriteModel.MonoGame.instance.Content.Load<Effect>("Shaders/Gradient");
+        fx = GameManager.instance.Content.Load<Effect>("Shaders/Gradient");
 
         multiplyBlend = new BlendState()
         {
@@ -112,6 +113,19 @@ public class MapManager : Script
             ColorSourceBlend = Blend.DestinationColor,
             ColorDestinationBlend = Blend.DestinationAlpha,
         };
+
+        cache = new Object();
+        cache.Space.Scale = new(Screen.widht + 20, Screen.height);
+        cache.Space.Position = new(0, -Screen.height + 7);
+        cache.Renderer.Color = Pico8.Lavender;
+    }
+
+    public override void Update()
+    {
+        if (Time.TargetTimer > 3)
+        {
+            cache = null;
+        }
     }
 
     public override void Draw()
@@ -119,10 +133,13 @@ public class MapManager : Script
         if (!hide)
         {
             tilemap.Draw();
+            if (Time.TargetTimer <= 3)
+                cache.Draw();
+
         }
     }
 
-    public override void DrawAdditive(ref SpriteBatch _batch)
+    public override void Draw(ref SpriteBatch _batch)
     {
     
         _batch.Begin(effect: fx ,blendState: multiplyBlend, samplerState: SamplerState.PointClamp);
@@ -136,6 +153,10 @@ public class MapManager : Script
         tilemap.Dispose();
         fx.Dispose();
         texture.Dispose();
+        tiles = null;
+        tilemap = null;
+        fx = null;
+        texture = null;
     }
 }
 
@@ -144,7 +165,7 @@ class BackGround : Script
     public static Color color1, color2;
 
 
-    public BackGround() : base(Scenes.Game)
+    public BackGround() : base(Scenes.Game, false)
     {
 
     }
@@ -160,10 +181,8 @@ class BackGround : Script
 
         bg.Space.Scale = new FriteCollection.Entity.Vector(Screen.widht - 16, Screen.height - (16 * 2));
         bg.Renderer.Color = color1;
-        bg.Space.LockCamera = true;
-        bg.Space.Position.y = -8;
 
-        shader = FriteModel.MonoGame.instance.Content.Load<Effect>("Shaders/ShaderTahLesFous");
+        shader = GameManager.instance.Content.Load<Effect>("Shaders/ShaderTahLesFous");
     }
 
     public override void Update()
@@ -178,12 +197,13 @@ class BackGround : Script
 
     public override void AfterDraw()
     {
-        if (Time.TargetTimer > 0.2f && FriteCollection.Input.Input.KeyBoard.H)
+        if (Time.TargetTimer > 0.2f && FriteCollection.Input.Input.KeyBoard.H && FriteCollection.Input.Input.KeyBoard.CtrlLeft)
         HitBox.Debug();
     }
 
     public override void Dispose()
     {
         shader.Dispose();
+        shader = null;
     }
 }

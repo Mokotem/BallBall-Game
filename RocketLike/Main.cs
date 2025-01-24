@@ -1,24 +1,55 @@
 ﻿using FriteCollection.Graphics;
 using FriteCollection.Scripting;
+using FriteCollection.Tools.TileMap;
 
 namespace RocketLike
 {
+    /*
+    X ---- bug de collision x avec le joueur
+    X ---- afficher l'heure en haut à gauche
+    X ---- points au mec qui fait x3
+    X ---- compteur de csc + popup
+    X ---- 2 nouvels maps
+    X ---- aim assist dans le menu touches
+    X ---- replay
+    X ---- bug de sauvegarde de temps.
+
+    */
+
+
     public class Settings : GetSeetings, ISetGameSettings
     {
         public void SetGameSettings()
         {
+            Settings.WindowWidth = 480 * 2;
+            Settings.WindowHeight = 270 * 2;
             Settings.GameFixeWidth = 480;
             Settings.GameFixeHeight = 270;
-            Settings.FPS = 165;
+            Settings.FPS = 240;
             Settings.StartScene = Scenes.Menu;
             Settings.FullScreen = true;
+            Settings.WindowName = "BallBall Game";
         }
     }
-    public class GameData
+    public static class GameData
     {
+        public const string VERSION = "1.2.0";  // deja modifié /!\
         public static uint sp1 = 0, sp2 = 0;
-        public static STATS STATS;
+        public static uint cp1 = 0, cp2 = 0;
+        public static SAVEDATA SAVE;
         public static bool firstConnection = true;
+        public static bool particles = true;
+        public static bool randomMode = false;
+        public static bool p1visee = false, p2visee = false;
+        public static bool cscCounter = false;
+        public static bool bonusOnCombo = true;
+        public static bool bigTapCircles = false;
+        public static bool dalton = false;
+        public static bool replay = true;
+        public static bool saved = false;
+        public static float defaultdt = 1f;
+        public static OgmoFile file;
+        public static bool custom = false;
     }
 
     public delegate float Task(); // retourne le delai
@@ -75,5 +106,24 @@ namespace RocketLike
         public static readonly Color Lavender = new Color() { RGB = new RGB(131, 118, 156) };
         public static readonly Color Pink = new Color() { RGB = new RGB(255, 119, 168) };
         public static readonly Color LightPeach = new Color() { RGB = new RGB(255, 204, 170) };
+        public static readonly Color[] COLORS = new Color[16]
+        {
+            Black,
+        DarkBlue,
+        DarkPurple,
+        DarkGreen,
+        Brown,
+        DarkGrey,
+        LightGrey,
+        White,
+        Red,
+        Orange,
+        Yellow,
+        Green,
+        Blue,
+        Lavender,
+        Pink,
+        LightPeach
+        };
     }
 }

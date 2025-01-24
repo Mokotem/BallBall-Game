@@ -1,27 +1,73 @@
 ﻿using FriteCollection.UI;
 using FriteCollection.Scripting;
-using FriteCollection.Graphics;
+using FriteCollection.Tools.SpriteSheet;
+using FriteCollection.Input;
+using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Graphics;
+using System;
 
 namespace RocketLike;
 
+public class Back : Script
+{
+    public Back() : base(Scenes.Game) { }
+
+    bool t;
+    public override void Start()
+    {
+         t = false;
+    }
+    public override void AfterUpdate()
+    {
+        KeyboardState state = Keyboard.GetState();
+        if (t == false && Input.KeyBoard.Escape && state.GetPressedKeyCount() < 2 && Time.TargetTimer > 0.2f)
+        {
+            GameData.SAVE.t += (ulong)(Time.TargetTimer);
+            SaveManager.Save(GameData.SAVE);
+            GameManager.CurrentScene = Scenes.Menu;
+            t = true;
+        }
+    }
+}
+
 public class UIManager : Script
 {
-    public UIManager() : base(Scenes.Game) { }
+    public UIManager() : base(Scenes.Game, false) { }
 
     Panel panel;
-    FriteCollection.Tools.TileMap.TileSet tile;
-    Microsoft.Xna.Framework.Graphics.Texture2D texture;
+    public static FriteCollection.Tools.TileMap.TileSet tile;
+    SpriteSheet sheet;
 
-    Text p1, p2, p3;
+    static Text score;
     Text escape;
     Text time;
-    Text mode;
 
-    public override void AfterStart()
+    Texture2D t;
+
+    private static string ts(int i)
+    {
+        return i < 10 ? "0" + i.ToString() : i.ToString();
+    }
+    private static DateTime T => DateTime.Now;
+    private static string TimeSTR => ts(T.Hour) + ":" + ts(T.Minute);
+    private static string Score => GameData.cscCounter ? (
+        "(own goal: " + GameData.cp1.ToString() + ")      " + GameData.sp1.ToString()
+        + "  -  " +
+        GameData.sp2.ToString() + "      (own goal: " + GameData.cp2.ToString() + ")")
+    :
+        (
+        GameData.sp1.ToString()
+        + "  -  " +
+        GameData.sp2.ToString()
+        )
+    ;
+
+    public override void Start()
     {
         Layer = 50;
-        texture = Open.Texture("Game/ui");
-        tile = new(texture)
+        t = Open.Texture("Game/ui");
+        sheet = new SpriteSheet(t, 24, 24);
+        tile = new(sheet[0, 0])
         {
             TileSize = new(8, 8),
             TileSeparation = new(0, 0),
@@ -29,83 +75,62 @@ public class UIManager : Script
         };
         panel = new Panel(tile, new Space(Bounds.Top, Extend.Horizontal, new Vector(0, 14)));
         {
-            p1 = new Text(GameData.sp1.ToString(),
-                new Space(Bounds.Center, Extend.None, new Vector(0, 0), new Vector(-9, 0)), panel);
-            p2 = new Text("(   -   )",
+            score = new Text(Score,
                 new Space(Bounds.Center, Extend.None, new Vector(0, 0), new Vector(0, 0)), panel);
-            p3 = new Text(GameData.sp2.ToString(),
-                new Space(Bounds.Center, Extend.None, new Vector(0, 0), new Vector(9, 0)), panel);
 
-            escape = new Text("echap  -->  menu principal",
+            escape = new Text(">escape<",
                 new Space(Bounds.Left, Extend.Full, new Vector(64, 14), new Vector(4, 0)), panel);
-            time = new Text("00:00",
+            time = new Text(TimeSTR,
                 new Space(Bounds.Center, Extend.Full, new Vector(64, 14), new Vector(226, 0)), panel);
-
-            if (Ball.AttireMode)
-            {
-                mode = new Text("target mode",
-                new Space(Bounds.Center, Extend.None, new Vector(0, 0), new Vector(115, 0)), panel);
-                mode.Color = Pico8.Pink;
-            }
-            else
-            {
-            mode = new Text("normal mode",
-                new Space(Bounds.Center, Extend.None, new Vector(0, 0), new Vector(115, 0)), panel);
-                mode.Color = Pico8.Blue * 1.5f;
-            }
         }
-        p1.Color = Color.White;
-        p3.Color = Color.White;
 
-        (GameManager.GetScript("Ball") as Ball).BUT += onBut;
+        (GameManager.GetScript("Ball") as Ball).BUT += OnBut;
     }
 
-    void onBut(bool sideRight, Ball.States ballState)
+    public static void setScore()
+    {
+        score.Edit = Score;
+    }
+
+    void OnBut(bool sideRight, Ball.States ballState, bool csc, byte t, bool combo)
     {
         if (sideRight)
         {
             GameData.sp1++;
-            p3.Color = Color.White;
-            p1.Color = Pico8.Yellow;
+            if (csc && GameData.cscCounter)
+                GameData.cp2++;
         }
         else
         {
             GameData.sp2++;
-            p3.Color = Pico8.Yellow;
-            p1.Color = Color.White;
+            if (csc && GameData.cscCounter)
+                GameData.cp1++;
         }
-        p1.Edit = GameData.sp1.ToString();
-        p3.Edit = GameData.sp2.ToString();
+        score.Edit = Score;
     }
 
     public override void Update()
     {
-        string r = ((int)(Time.TargetTimer) % 60).ToString();
-        if (r.Length < 2)
-        {
-            r = "0" + r;
-        }
-        string l = ((int)(Time.TargetTimer) / 60).ToString();
-        if (l.Length < 2)
-        {
-            l = "0" + l;
-        }
-        time.Edit = l + ":" + r;
+        time.Edit = TimeSTR;
     }
 
     public override void DrawUI()
     {
         panel.Draw();
-        p1.Draw();
-        p2.Draw();
-        p3.Draw();
+        score.Draw();
         escape.Draw();
         time.Draw();
-        mode.Draw();
     }
 
     public override void Dispose()
     {
         tile.Dispose();
+        sheet.Dispose();
+        panel = null;
+        tile = null;
+        t.Dispose();
+
+        escape = null;
+        time = null;
     }
 }

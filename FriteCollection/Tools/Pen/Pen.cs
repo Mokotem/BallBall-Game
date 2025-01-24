@@ -1,4 +1,5 @@
 ﻿using FriteCollection.Entity;
+using FriteCollection.Scripting;
 using MonoGame.Extended;
 
 namespace FriteCollection.Tools.Pen
@@ -24,11 +25,11 @@ namespace FriteCollection.Tools.Pen
         {
             float th = thickness is null ? Pen.thickness : thickness.Value;
             Graphics.Color co = color is null ? Pen.Color : color;
-            Vector offset = Pen.UI ? FriteModel.MonoGame.instance.UIscreenBounds[(int)Pen.GridOrigin]
+            Vector offset = Pen.UI ? GameManager.instance.UIscreenBounds[(int)Pen.GridOrigin]
                                      :
-                                     FriteModel.MonoGame.instance.screenBounds[(int)Pen.GridOrigin];
+                                     GameManager.instance.screenBounds[(int)Pen.GridOrigin];
 
-            FriteModel.MonoGame.instance.SpriteBatch.DrawLine
+            GameManager.instance.SpriteBatch.DrawLine
             (
                     v1.x + offset.x - Scripting.Camera.Position.x,
                     -v1.y + offset.y + Scripting.Camera.Position.y,
@@ -50,11 +51,11 @@ namespace FriteCollection.Tools.Pen
         {
             float th = thickness is null ? Pen.thickness : thickness.Value;
             Graphics.Color co = color is null ? Pen.Color : color;
-            Vector offset = Pen.UI ? FriteModel.MonoGame.instance.UIscreenBounds[(int)Pen.GridOrigin]
+            Vector offset = Pen.UI ? GameManager.instance.UIscreenBounds[(int)Pen.GridOrigin]
                          :
-                         FriteModel.MonoGame.instance.screenBounds[(int)Pen.GridOrigin];
+                         GameManager.instance.screenBounds[(int)Pen.GridOrigin];
 
-            FriteModel.MonoGame.instance.SpriteBatch.DrawRectangle
+            GameManager.instance.SpriteBatch.DrawRectangle
             (
                 new RectangleF
                 (
@@ -76,11 +77,11 @@ namespace FriteCollection.Tools.Pen
         {
             float th = thickness is null ? Pen.thickness : thickness.Value;
             Graphics.Color co = color is null ? Pen.Color : color;
-            Vector offset = Pen.UI ? FriteModel.MonoGame.instance.UIscreenBounds[(int)Pen.GridOrigin]
+            Vector offset = Pen.UI ? GameManager.instance.UIscreenBounds[(int)Pen.GridOrigin]
                          :
-                         FriteModel.MonoGame.instance.screenBounds[(int)Pen.GridOrigin];
+                         GameManager.instance.screenBounds[(int)Pen.GridOrigin];
 
-            FriteModel.MonoGame.instance.SpriteBatch.DrawCircle
+            GameManager.instance.SpriteBatch.DrawCircle
             (
                 new CircleF
                 (
@@ -106,11 +107,11 @@ namespace FriteCollection.Tools.Pen
         {
             float th = thickness is null ? Pen.thickness : thickness.Value;
             Graphics.Color co = color is null ? Pen.Color : color;
-            Vector offset = Pen.UI ? FriteModel.MonoGame.instance.UIscreenBounds[(int)Pen.GridOrigin]
+            Vector offset = Pen.UI ? GameManager.instance.UIscreenBounds[(int)Pen.GridOrigin]
                          :
-                         FriteModel.MonoGame.instance.screenBounds[(int)Pen.GridOrigin];
+                         GameManager.instance.screenBounds[(int)Pen.GridOrigin];
 
-            FriteModel.MonoGame.instance.SpriteBatch.DrawPoint
+            GameManager.instance.SpriteBatch.DrawPoint
             (
                 v.x + offset.x,
                 -v.y + offset.y,

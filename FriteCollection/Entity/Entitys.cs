@@ -81,7 +81,7 @@ namespace FriteCollection.Entity
                     }
                 }
 
-                FriteModel.MonoGame.instance.SpriteBatch.Draw
+                GameManager.instance.SpriteBatch.Draw
                 (
                     Renderer.Texture,
                     new Microsoft.Xna.Framework.Rectangle
@@ -122,7 +122,6 @@ namespace FriteCollection.Entity
     /// </summary>
     public class Text : Entity, ICopy<Text>
     {
-        private float _size;
         private int _spacing;
         private static readonly BoundFunc _boundFuncs = new();
 
@@ -132,7 +131,6 @@ namespace FriteCollection.Entity
             {
                 Space = this.Space.Copy(),
                 Renderer = Renderer.Copy(),
-                Size = this._size,
                 Spacing = this._spacing
             };
             return t;
@@ -144,18 +142,18 @@ namespace FriteCollection.Entity
             {
                 Vector entPosi = base.Space.GetScreenPosition(includeCamera: !Space.UI);
 
-                FriteModel.MonoGame.instance.SpriteBatch.DrawString
+                GameManager.instance.SpriteBatch.DrawString
                 (
                     font,
                     _text,
-                    new Microsoft.Xna.Framework.Vector2
+                    new Vector2
                     (
                         entPosi.x, entPosi.y
                     ),
                     base.GetEntColor(),
                     Space.rotation * (MathF.PI / 180f),
                     GetTextBounds()[(int)Space.CenterPoint].ToVector2(),
-                    Size,
+                    1,
                     SpriteEffects.None,
                     0
                 );
@@ -185,10 +183,13 @@ namespace FriteCollection.Entity
                 _text = value;
                 this.Space.Scale = new Vector
                 (
-                    (font.MeasureString(value).X * _size) + (_spacing * (value.Length - 1)),
-                    (font.MeasureString(value).Y * _size)
+                    (font.MeasureString(value).X) + (_spacing * (value.Length - 1)),
+                    (font.MeasureString(value).Y)
                 );
-                this._bounds = _boundFuncs.CreateBounds((font.MeasureString(value).X * _size) + (_spacing * (value.Length - 1)), (font.MeasureString(value).Y * _size));
+                this._bounds = _boundFuncs.CreateBounds(
+                    (font.MeasureString(value).X) + (_spacing * (value.Length - 1)),
+                    (font.MeasureString(value).Y)
+                    );
             }
         }
 
@@ -207,7 +208,6 @@ namespace FriteCollection.Entity
 
         private void Constructor()
         {
-            _size = 1f;
             _spacing = 0;
             Space.CenterPoint = Bounds.Center;
         }
@@ -230,33 +230,8 @@ namespace FriteCollection.Entity
         public Text(SpriteFont font, string text)
         {
             this.font = font;
-            this.Write = text;
             Constructor();
-        }
-
-        /// <summary>
-        /// Size factor (1f: font file size, 2f: twice the font size, 0f: won't draw).
-        /// </summary>
-        public float Size
-        {
-            get { return _size; }
-            set
-            {
-                _size = MathF.Max(0, value);
-                if (_text != null)
-                {
-                    this.Space.Scale = new Vector
-                    (
-                        (font.MeasureString(_text).X * value) + (_spacing * (_text.Length - 1)),
-                        (font.MeasureString(_text).Y * value)
-                    );
-                    this._bounds = _boundFuncs.CreateBounds((font.MeasureString(_text).X * value) + (_spacing * (_text.Length - 1)), (font.MeasureString(_text).Y * value));
-                }
-                else
-                {
-                    this.Space.Scale = new Vector(0, 0); 
-                }
-            }
+            this.Write = text;
         }
 
         /// <summary>

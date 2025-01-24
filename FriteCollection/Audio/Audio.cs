@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Media;
 using Microsoft.Xna.Framework.Audio;
 using FriteCollection.Scripting;
+using MonoGame.Extended;
 
 namespace FriteCollection.Audio
 {
@@ -17,7 +18,6 @@ namespace FriteCollection.Audio
     /// </summary>
     public class Music : Audio, IDisposable
     {
-        private static List<int> songIDs = new List<int>();
         private static int _playingSong;
         private Song _audio;
         private int _ID;
@@ -30,7 +30,6 @@ namespace FriteCollection.Audio
         {
             _audio = audioFile;
             Duration = (float)audioFile.Duration.TotalSeconds;
-            CreateSongID();
         }
 
         public static float Volume
@@ -128,20 +127,6 @@ namespace FriteCollection.Audio
             _playingSong = 0;
         }
 
-        private void CreateSongID()
-        {
-            if (songIDs.Count <= 0)
-            {
-                _ID = 1;
-                songIDs.Add(1);
-            }
-            else
-            {
-                _ID = songIDs[songIDs.Count - 1] + 1;
-                songIDs.Add(_ID);
-            }
-        }
-
         /// <summary>
         /// Gets the audio file of the music.
         /// </summary>
@@ -196,7 +181,7 @@ namespace FriteCollection.Audio
             sfx = _audio.CreateInstance();
             sfx.IsLooped = loop;
             sfx.Volume = _volume;
-            sfx.Pitch = (RocketLike.PlayerManager.random.NextSingle() - 0.5f) / 2f;
+            sfx.Pitch = RocketLike.PlayerManager.random.NextSingle() - 0.5f;
             sfx.Play();
         }
 

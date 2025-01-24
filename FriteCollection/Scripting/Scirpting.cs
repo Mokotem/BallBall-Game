@@ -117,7 +117,7 @@ public abstract class Time
     /// </summary>
     public static float TargetTimer
     {
-        get { return FriteModel.MonoGame.instance._targetTimer; }
+        get { return GameManager.instance._targetTimer; }
     }
 
     /// <summary>
@@ -125,7 +125,7 @@ public abstract class Time
     /// </summary>
     public static float Timer
     {
-        get { return FriteModel.MonoGame.instance._timer; }
+        get { return GameManager.instance._timer; }
     }
 
     /// <summary>
@@ -133,7 +133,7 @@ public abstract class Time
     /// </summary>
     public static float Delta
     {
-        get { return FriteModel.MonoGame.instance._delta; }
+        get { return GameManager.instance._delta; }
     }
 }
 
@@ -155,6 +155,8 @@ public class List<T> : IEnumerable, ICopy<List<T>>
     }
 
     private T[] _values = new T[0];
+
+    public T Last => _values[this.Count - 1];
 
     public List(params T[] elements)
     {
@@ -240,12 +242,25 @@ public class List<T> : IEnumerable, ICopy<List<T>>
 
     public bool Remove(T value)
     {
-        uint i = 0;
-        while (i < _values.Length && !value.Equals(_values[i]))
-            i++;
-        if (i < Count)
+        if (_values is not null)
         {
-            RemoveIndex(i);
+            uint i = 0;
+            while (i < _values.Length && !value.Equals(_values[i]))
+                i++;
+            if (i < Count)
+            {
+                RemoveIndex(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public bool Remove()
+    {
+        if (Count > 0)
+        {
+            RemoveIndex(Count - 1);
             return true;
         }
         return false;
@@ -285,7 +300,14 @@ public class List<T> : IEnumerable, ICopy<List<T>>
 
     public void Clear()
     {
-        _values = Array.Empty<T>();
+        if (_values is not null)
+        {
+            for (uint i = 0; i < _values.Length; i++)
+            {
+                _values[i] = default(T);
+            }
+        }
+        _values = null;
     }
 
     struct ListEnum : IEnumerator
@@ -341,6 +363,7 @@ public class List<T> : IEnumerable, ICopy<List<T>>
 
 public abstract class Executable : IDisposable
 {
+    public virtual bool Active { get; }
     public virtual void BeforeStart() { }
     public virtual void Start() { }
     public virtual void AfterStart() { }
@@ -359,7 +382,6 @@ public abstract class Executable : IDisposable
     public virtual void AfterDraw(ref SpriteBatch spriteBatch) { }
 
     public virtual void DrawAdditive() { }
-    public virtual void DrawAdditive(ref SpriteBatch spriteBatch) { }
 
     public virtual void DrawUI() { }
     public virtual void DrawUI(ref SpriteBatch spriteBatch) { }
@@ -373,9 +395,9 @@ public abstract class Executable : IDisposable
     {
         set
         {
-            if (FriteModel.MonoGame.instance.CurrentExecutables.Contains(this) == true)
+            if (GameManager.instance.CurrentExecutables.Contains(this) == true)
             {
-                List<Executable> _currentScripts = FriteModel.MonoGame.instance.CurrentExecutables;
+                List<Executable> _currentScripts = GameManager.instance.CurrentExecutables;
                 _currentScripts.Remove(this);
 
                 layer = value;
@@ -403,11 +425,11 @@ public abstract class Executable : IDisposable
 
 public abstract class Script : Executable
 {
-    public Script(Scenes scene)
+    public Script(Scenes scene, bool active = true)
     {
         _attributedScenes = scene;
     }
-
+    public override bool Active => true;
     private Scenes _attributedScenes;
 
     public Scenes AttributedScenes
@@ -425,6 +447,8 @@ public abstract class Clone : Executable
     private readonly ulong _id;
     private bool isdestroyed = false;
 
+    public override bool Active => true;
+
     public bool IsDestroyed => isdestroyed;
 
     public ulong ID => _id;
@@ -433,7 +457,7 @@ public abstract class Clone : Executable
     {
         _count++;
         _id = _count;
-        FriteModel.MonoGame.instance.CurrentExecutables.Add(this);
+        GameManager.instance.CurrentExecutables.Add(this);
         this.Start();
     }
 
@@ -448,7 +472,7 @@ public abstract class Clone : Executable
 
     public void Destroy()
     {
-        FriteModel.MonoGame.instance.CurrentExecutables.Remove(this);
+        GameManager.instance.CurrentExecutables.Remove(this);
         isdestroyed = true;
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using FriteCollection.Scripting;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -19,7 +20,7 @@ namespace FriteCollection.Tools.SpriteSheet
             {
                 for (int y = 0; y < hCount; y++)
                 {
-                    Texture2D tex = new Texture2D(FriteModel.MonoGame.instance.GraphicsDevice,
+                    Texture2D tex = new Texture2D(GameManager.instance.GraphicsDevice,
                         width, height);
                     Color[] data = new Color[width * height];
 
@@ -30,6 +31,8 @@ namespace FriteCollection.Tools.SpriteSheet
                     textures[x, y] = tex;
                 }
             }
+
+            texture.Dispose();
         }
 
         public Texture2D this[int x, int y]

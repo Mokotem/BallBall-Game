@@ -3,7 +3,6 @@ using FriteCollection.Scripting;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using System.Linq;
 
 namespace FriteCollection.Tools.TileMap;
 
@@ -153,20 +152,20 @@ public class TileMap : IDisposable
         _sheet = sheet;
         _file = file;
 
-        SpriteBatch batch = FriteModel.MonoGame.instance.SpriteBatch;
+        SpriteBatch batch = GameManager.instance.SpriteBatch;
 
         xCount = (file.width / file.layers[0].gridCellWidth);
         yCount = (file.height / file.layers[0].gridCellHeight);
 
         _renderTarget = new RenderTarget2D
         (
-            FriteModel.MonoGame.instance.GraphicsDevice,
+            GameManager.instance.GraphicsDevice,
             xCount * sheet.TileSize.width,
             yCount * sheet.TileSize.height
         );
 
-        FriteModel.MonoGame.instance.GraphicsDevice.SetRenderTarget(_renderTarget);
-        FriteModel.MonoGame.instance.GraphicsDevice.Clear(Microsoft.Xna.Framework.Color.Transparent);
+        GameManager.instance.GraphicsDevice.SetRenderTarget(_renderTarget);
+        GameManager.instance.GraphicsDevice.Clear(Microsoft.Xna.Framework.Color.Transparent);
         batch.Begin(samplerState: SamplerState.PointClamp);
         if (backgroundTexture != null)
         {
@@ -183,7 +182,7 @@ public class TileMap : IDisposable
 
         _hitboxData = new HitBox.Rectangle[xCount, yCount];
 
-        foreach (OgmoLayer layer in file.layers)
+        foreach (OgmoLayer layer in new OgmoLayer[3] { _file.layers[2], _file.layers[1], _file.layers[0] })
         {
             for (int i = 0; i < layer.data.Length; i++)
             {
@@ -287,7 +286,7 @@ public class TileMap : IDisposable
                     result.Add(new Entity.Vector
                         (
                            (k % xCount) * _sheet.TileSize.width - (_file.width - _sheet.TileSize.width) / 2f,
-                           -(k / xCount) * _sheet.TileSize.height + (_file.height + _sheet.TileSize.height) / 2f
+                           (-(k / xCount) * _sheet.TileSize.height + (_file.height + _sheet.TileSize.height) / 2f) - _sheet.TileSize.height
                         ));
                 }
             }
@@ -392,7 +391,7 @@ public class TileMap : IDisposable
 
     public void Draw()
     {
-        FriteModel.MonoGame.instance.SpriteBatch.Draw
+        GameManager.instance.SpriteBatch.Draw
         (
             _renderTarget,
             new Microsoft.Xna.Framework.Rectangle

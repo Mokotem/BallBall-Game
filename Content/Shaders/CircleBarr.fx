@@ -38,7 +38,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
     {
         if (dir + (PI / 2) >= amount * PI * 2)
         {
-            return input.Color;
+            return tex2D(SpriteTextureSampler, input.TextureCoordinates);
         }
     }
     return float4(0, 0, 0, 0);

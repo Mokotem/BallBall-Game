@@ -120,13 +120,13 @@ namespace FriteCollection.Entity
         public Vector GetScreenPosition(bool includeCamera = true)
         {
             if (this.UI)
-                return new Vector(Position.x + FriteModel.MonoGame.instance.UIscreenBounds[(int)GridOrigin].x, Position.y + FriteModel.MonoGame.instance.UIscreenBounds[(int)GridOrigin].y);
+                return new Vector(Position.x + GameManager.instance.UIscreenBounds[(int)GridOrigin].x, Position.y + GameManager.instance.UIscreenBounds[(int)GridOrigin].y);
             else
                 return 
                     GridOrigin == Camera.GridOrigin && includeCamera ?
-                    new Vector(((Position.x - Camera.Position.x) * Camera.zoom) + FriteModel.MonoGame.instance.screenBounds[(int)GridOrigin].x, -((Position.y - Camera.Position.y) * Camera.zoom) + FriteModel.MonoGame.instance.screenBounds[(int)GridOrigin].y)
+                    new Vector(((Position.x - Camera.Position.x) * Camera.zoom) + GameManager.instance.screenBounds[(int)GridOrigin].x, -((Position.y - Camera.Position.y) * Camera.zoom) + GameManager.instance.screenBounds[(int)GridOrigin].y)
                     :
-                    new Vector(Position.x + FriteModel.MonoGame.instance.screenBounds[(int)GridOrigin].x, -Position.y + FriteModel.MonoGame.instance.screenBounds[(int)GridOrigin].y);
+                    new Vector(Position.x + GameManager.instance.screenBounds[(int)GridOrigin].x, -Position.y + GameManager.instance.screenBounds[(int)GridOrigin].y);
         }
 
         private Bounds _eGridOrigin;
@@ -250,7 +250,7 @@ namespace FriteCollection.Entity
     {
         private static readonly BoundFunc _boundFuncs = new();
 
-        public static readonly Texture2D DefaultTexture = FriteModel.MonoGame.CreateTexture(FriteModel.MonoGame.instance.GraphicsDevice, 2, 2, Graphics.Color.White);
+        public static Texture2D DefaultTexture;
         private byte _a = 255;
 
         /// <summary>

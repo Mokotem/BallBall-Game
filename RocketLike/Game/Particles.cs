@@ -6,6 +6,58 @@ using FriteCollection.Graphics;
 
 namespace RocketLike;
 
+public class MessageBox : Clone
+{
+    private Object bande;
+    private Text t;
+    private float timer;
+
+    public MessageBox(bool success, string message)
+    {
+        bande = new Object()
+        {
+            Space = new Space()
+            {
+                UI = true,
+                CenterPoint = Bounds.BottomLeft,
+                GridOrigin = Bounds.BottomLeft,
+                Scale = new Vector(message.Length > 40 ? Screen.widht : (Screen.widht / 2), message.Length > 40 ? 15 : 7)
+            },
+            Renderer = new Renderer()
+            {
+                Color = success ? new Color(0, 0.7f, 0) : new Color(0.75f, 0, 0),
+            }
+        };
+        t = new Text(GameManager.GameFont, message);
+        t.Space = new Space()
+        {
+            UI = true,
+            CenterPoint = Bounds.Left,
+            GridOrigin = Bounds.Left,
+            Position = new Vector(1, message.Length > 40 ? 126 : 130)
+        };
+        timer = 0f;
+    }
+
+    public override void Update()
+    {
+        timer += Time.FrameTime * (t.Write.Length > 40 ? 0.5f : 1f);
+        float a = Math.Min(1, -timer + (t.Write.Length > 40 ? 5 : 4));
+        t.Renderer.Alpha = a;
+        bande.Renderer.Alpha = a;
+        if (a < 0)
+        {
+            Destroy();
+        }
+    }
+
+    public override void AfterDraw()
+    {
+        bande.Draw();
+        t.Draw();
+    }
+}
+
 
 public class ParticleFlaque : Clone
 {
@@ -34,8 +86,8 @@ public class ParticleFlaque : Clone
 public class ParticleWink : Clone
 {
     private readonly byte number = 2;
-    readonly Object[] p;
-    readonly Vector[] vitesse;
+    Object[] p;
+    Vector[] vitesse;
     public ParticleWink(ref Vector pos)
     {
         float rnd = PlayerManager.random.NextInt64(0, 180);
@@ -63,7 +115,11 @@ public class ParticleWink : Clone
         }
         timer += Time.FrameTime;
         if (timer > time)
+        {
+            p = null;
+            vitesse = null;
             Destroy();
+        }
     }
 
     public override void Draw()
@@ -75,34 +131,30 @@ public class ParticleWink : Clone
 
 public class ParticleSmoke : Clone
 {
-    private Object p;
-
+    private Vector pos;
+    private float alpha = 1f;
     private readonly Vector vitesse;
-    private float delay = 0.3f;
+    private float delay = 0.5f;
 
     public ParticleSmoke(Vector startpos, short direction) : base()
     {
-        p = new Object();
-        p.Renderer.Color = Pico8.Yellow;
-        p.Space.Scale = new Vector(1f, 1f);
         vitesse.x = Math.Cos(direction);
         vitesse.y = Math.Sin(direction);
-        p.Space.Position = startpos;
-        p.Renderer.Alpha = 1f;
+        pos = startpos;
     }
 
     public override void Update()
     {
-        p.Space.Position += vitesse * 200 * Time.FrameTime;
-        delay += -Time.FrameTime * 4;
-
+        pos += vitesse * 200 * Time.FrameTime;
+        delay += -Time.FrameTime * 3;
+        alpha = delay / 0.5f;
         if (delay <= 0)
             Destroy();
     }
 
-    public override void DrawAdditive()
+    public override void BeforeDraw()
     {
-        p.Draw();
+        Pen.Point(pos, alpha: alpha, color: Pico8.Yellow);
     }
 }
 
@@ -117,7 +169,7 @@ public class ParticleGlow : Clone
     {
         this.pos = pos + new Vector(
             PlayerManager.random.NextInt64(-6, 6),
-            PlayerManager.random.NextInt64(-6, 6) - 15);
+            PlayerManager.random.NextInt64(-6, 6));
         vitesse = new Vector(
             PlayerManager.random.NextInt64(-100, 100),
             PlayerManager.random.NextInt64(-100, 100)) / 8f;
@@ -145,7 +197,7 @@ public class ParticleBall : Clone
 {
     readonly Vector vitesse;
     Vector pos;
-    readonly Color color;
+    Color color;
     float alpha = 1f;
 
     public ParticleBall(ref Vector pos, ref Vector vit, ref Color color)
@@ -177,7 +229,10 @@ public class ParticleBall : Clone
         timer += Time.FrameTime;
         alpha = 1 -(timer / 0.5f);
         if (timer > 0.5f)
+        {
+            color = null;
             Destroy();
+        }
     }
 
     public override void DrawAdditive()

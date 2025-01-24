@@ -266,7 +266,7 @@ namespace FriteCollection.Entity
                     posi1,
                     new Vector(posi1.x + sp1.Scale.x, posi1.y),
                     new Vector(posi1.x, posi1.y + sp1.Scale.y),
-                    posi1 + sp1.Scale,
+                    posi1 + sp1.Scale
                 };
 
                 Vector closePoint = new Vector(-1, -1);
@@ -379,7 +379,24 @@ namespace FriteCollection.Entity
                 }
                 else if (numberBools == 3)
                 {
+                    switch (bools[0], bools[1], bools[2], bools[3])
+                    {
+                        case (true, true, true, false):
+                            side = Sides.Up;
+                            break;
 
+                        case (true, true, false, true):
+                            side = Sides.Up;
+                            break;
+
+                        case (false, true, true, true):
+                            side = Sides.Down;
+                            break;
+
+                        case (true, false, true, true):
+                            side = Sides.Down;
+                            break;
+                    }
                 }
 
                 return value;
@@ -479,6 +496,25 @@ namespace FriteCollection.Entity
                     }
                 }
 
+
+                if (points[0].x > sp2.Position.x && points[0].x <= sp2.Position.x + sp2.Scale.x
+                    && points[0].y < sp2.Position.y && points[2].y > sp2.Position.y + sp2.Scale.y)
+                {
+                    colided = true;
+                    bools = new bool[4] { true, false, true, false };
+                    value = true;
+                    side = Sides.Left;
+                };
+
+                if (points[1].x > sp2.Position.x && points[1].x <= sp2.Position.x + sp2.Scale.x
+                    && points[1].y < sp2.Position.y && points[3].y > sp2.Position.y + sp2.Scale.y)
+                {
+                    colided = true;
+                    bools = new bool[4] { false, true, false, true };
+                    value = true;
+                    side = Sides.Right;
+                };
+
                 byte numberBools = CountBools(bools);
                 if (numberBools < 3)
                 {
@@ -513,7 +549,7 @@ namespace FriteCollection.Entity
                     Vector v1 = posiCol1;
                     Vector v2 = posiCol1 + spaceCol1.Scale;
 
-                    FriteModel.MonoGame.instance.SpriteBatch.DrawRectangle
+                    GameManager.instance.SpriteBatch.DrawRectangle
                     (
                         new Microsoft.Xna.Framework.Rectangle
                         (

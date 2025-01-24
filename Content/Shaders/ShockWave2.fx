@@ -27,7 +27,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 {
     float2 posi = input.TextureCoordinates;
     
-    posi.y += pow(2, -pow((3 * posi.x) - (timer * 7) + 2, 2)) * sin((3 * posi.x) - (timer * 7) + 3) * 0.1;
+    posi.y += pow(2, -pow((3 * posi.x) - (timer * 7) + 2, 2)) * sin((3 * posi.x) - (timer * 7) + 5) * 0.12;
     
     if (posi.y > 1)
     {

@@ -6,6 +6,8 @@ using FriteCollection.Entity;
 using FriteCollection.Scripting;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using RocketLike;
 
 namespace FriteModel;
 
@@ -13,31 +15,42 @@ public class MonoGame : Game
 {
     private GraphicsDeviceManager graphics;
     public SpriteBatch SpriteBatch;
-    private RocketLike.Settings onSettings;
+    private Settings onSettings;
 
-    public static MonoGame instance;
     public List<FriteCollection.UI.ButtonCore> buttons = new List<FriteCollection.UI.ButtonCore>();
 
     private bool changingScene = false;
+    public bool charging = false;
+    public Effect oFilter;
+    public SoundEffect shutsfx;
 
     public MonoGame()
     {
         Content.RootDirectory = "Content";
-        instance = this;
         IsMouseVisible = true;
         graphics = new GraphicsDeviceManager(this);
+        Window.AllowAltF4 = false;
+        Window.AllowUserResizing = false;
     }
 
     public float _timer = 0f, _delta = 0f, _targetTimer = 0f;
+    public bool oldFilter = false;
+    public void SetFps(byte fps)
+    {
+        GetSeetings.Settings.FPS = fps;
+        TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0f / fps);
+    }
 
-    public static Texture2D CreateTexture(GraphicsDevice device, int w, int h, FriteCollection.Graphics.Color color)
+    public bool FPS60 => GetSeetings.Settings.FPS < 100;
+
+    private static Texture2D CreateTexture(GraphicsDevice device, int w, int h, Color color)
     {
         Texture2D texture = new Texture2D(device, w, h);
 
         Color[] data = new Color[w * h];
         for (int pixel = 0; pixel < w * h; pixel++)
         {
-            data[pixel] = new Color(color.RGB.R, color.RGB.G, color.RGB.B);
+            data[pixel] = color;
         }
 
         texture.SetData(data);
@@ -46,13 +59,18 @@ public class MonoGame : Game
     }
 
     public List<Executable> CurrentExecutables = new List<Executable>();
-    public FriteCollection.UI.Vector mouseClickedPosition = FriteCollection.UI.Vector.Zero;
+    public FriteCollection.UI.Vector
+        mouseClickedPosition = FriteCollection.UI.Vector.Zero,
+        mousePosition = FriteCollection.UI.Vector.Zero;
 
     public FriteCollection.Tools.Shaders.Shader CurrentShader = null;
 
     protected override void Initialize()
     {
         Music.Volume = 0.5f;
+
+        GameData.firstConnection = true;
+
         Window.AllowUserResizing = false;
         onSettings = new RocketLike.Settings();
         onSettings.SetGameSettings();
@@ -62,20 +80,64 @@ public class MonoGame : Game
         graphics.PreferredBackBufferHeight = GetSeetings.Settings.WindowHeight;
         FullScreen = GetSeetings.Settings.FullScreen;
 
-        SpriteBatch = new SpriteBatch(GraphicsDevice);
-        GameManager.CurrentScene = GetSeetings.Settings.StartScene;
         TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0f / GetSeetings.Settings.FPS);
         screenBounds = _bf.CreateBounds(GetSeetings.Settings.GameFixeWidth, GetSeetings.Settings.GameFixeHeight);
 
+        shutsfx = Open.SoundEffect("Sfx/start");
+        Renderer.DefaultTexture = CreateTexture(GraphicsDevice, 2, 2, Color.White);
+
         base.Initialize();
+        UpdateScriptToScene();
     }
+
+
+    public static Music music;
 
     public void UpdateScriptToScene()
     {
+        Content.Unload();
+        Content.Dispose();
+
+        if (replay is not null) DisposeReplay();
+        replay = new List<Texture2D>();
+
+        Content = new Microsoft.Xna.Framework.Content.ContentManager(Services);
+        Content.RootDirectory = "Content";
+
+        if (oldFilter)
+        {
+            oFilter = Content.Load<Effect>("Shaders/oldFilter");
+        }
+
+        if (music is not null)
+        {
+            music.Dispose();
+        }
+        shutsfx.Dispose();
+        shutsfx = Open.SoundEffect("Sfx/start");
+        shutsfx.Volume = 0.2f;
+        if (GameManager.CurrentScene == Scenes.Game)
+        {
+            music = Open.Music("Game/587501_Last-Tile-");
+            Music.Volume = 0.2f;
+            music.Start();
+        }
+        else
+        {
+            music = Open.Music("Game/363931_Sick_Life_Inc.");
+            Music.Volume = 0.4f;
+            music.Start();
+        }
         changingScene = true;
         HitBox.ClearHitboxes();
-        Music.StopAllMusics();
-        Content.Unload();
+        if (SpriteBatch is not null)
+            SpriteBatch.Dispose();
+
+        GameManager.GameFont = Open.Font("Game/fritefont");
+
+        SpriteBatch = new SpriteBatch(GraphicsDevice);
+
+        buttons.Clear();
 
         foreach (Executable exe in CurrentExecutables)
         {
@@ -91,6 +153,9 @@ public class MonoGame : Game
 
         _timer = 0;
         _targetTimer = 0;
+
+        GameManager.instance = null;
+        GameManager.instance = this;
 
         Type[] allTypes = Assembly.GetExecutingAssembly().GetTypes();
         var childTypesScript = allTypes.Where(t => t.IsSubclassOf(typeof(Script)) && !t.IsAbstract);
@@ -134,12 +199,13 @@ public class MonoGame : Game
         {
             script.AfterUpdate();
         }
-
+        scaleY = 2f;
         GC.Collect();
     }
 
     private bool _fullScreen;
     public float aspectRatio;
+    DisplayMode display => GraphicsAdapter.DefaultAdapter.CurrentDisplayMode;
 
     public bool FullScreen
     {
@@ -170,15 +236,15 @@ public class MonoGame : Game
             }
             else
             {
-                float ratioW = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width / (float)GetSeetings.Settings.GameFixeWidth;
-                float ratioH = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height / (float)GetSeetings.Settings.GameFixeHeight;
+                float ratioW = display.Width / (float)GetSeetings.Settings.GameFixeWidth;
+                float ratioH = display.Height / (float)GetSeetings.Settings.GameFixeHeight;
 
                 aspectRatio = MathF.Min(ratioW, ratioH);
 
                 targetGameRectangle = new Rectangle
                 (
-                    (int)((GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width - GetSeetings.Settings.GameFixeWidth * aspectRatio) / 2f),
-                    (int)((GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height - GetSeetings.Settings.GameFixeHeight * aspectRatio) / 2f),
+                    (int)((display.Width - GetSeetings.Settings.GameFixeWidth * aspectRatio) / 2f),
+                    (int)((display.Height - GetSeetings.Settings.GameFixeHeight * aspectRatio) / 2f),
                     (int)(GetSeetings.Settings.GameFixeWidth * aspectRatio),
                     (int)(GetSeetings.Settings.GameFixeHeight * aspectRatio)
                 );
@@ -197,6 +263,12 @@ public class MonoGame : Game
     private BoundFunc _bf = new BoundFunc();
     public Vector[] screenBounds, UIscreenBounds;
     public bool previousMouseLeft;
+    public float scaleY = 2f;
+
+    public const byte REPLAY_FPS = 30;
+    public const ushort REPLAY_LENGHT = REPLAY_FPS * 5;
+    private List<Texture2D> replay;
+    public Texture2D[] Replay => replay.ToArray();
 
     protected override void Update(GameTime gameTime)
     {
@@ -204,10 +276,19 @@ public class MonoGame : Game
         _targetTimer += (1f / GetSeetings.Settings.FPS);
         _delta = (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000f;
 
-        if (Microsoft.Xna.Framework.Input.Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed && !previousMouseLeft)
+        MouseState mstate = Mouse.GetState();
+        FriteCollection.UI.Vector v = new(
+            (mstate.Position.X) * GetSeetings.Settings.GameFixeWidth / (_fullScreen ? display.Width : GetSeetings.Settings.WindowWidth),
+            (mstate.Position.Y) * GetSeetings.Settings.GameFixeHeight / (_fullScreen ? display.Height : GetSeetings.Settings.WindowHeight));
+        if (Mouse.GetState().LeftButton == ButtonState.Pressed && !previousMouseLeft)
         {
-            Vector v = FriteCollection.Input.Input.Mouse.Position(bound: Bounds.TopLeft);
-            mouseClickedPosition = new((int)v.x, (int)v.y);
+            mouseClickedPosition = v;
+        }
+        mousePosition = v;
+        if (!this.IsActive)
+        {
+            mouseClickedPosition = new(-10, -10);
+            mousePosition = new(-10, -10);
         }
 
         if (!changingScene)
@@ -232,7 +313,11 @@ public class MonoGame : Game
             {
                 foreach (FriteCollection.UI.ButtonCore but in buttons)
                 {
-                    but.Update();
+                    if (!changingScene)
+                    {
+                        but.Update();
+                    }
+                    else break;
                 }
             }
             if (!changingScene)
@@ -245,11 +330,16 @@ public class MonoGame : Game
             }
         }
 
-        previousMouseLeft = Microsoft.Xna.Framework.Input.Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
+        previousMouseLeft = Mouse.GetState().LeftButton == ButtonState.Pressed;
+        z = MathF.Min(1, _targetTimer * 10);
         base.Update(gameTime);
     }
 
     RenderTarget2D renderTarget, renderTargetUI;
+    float z;
+    private int SX => GetSeetings.Settings.GameFixeWidth;
+    private int SY => GetSeetings.Settings.GameFixeHeight;
+    byte av = 0;
 
     protected override void Draw(GameTime gameTime)
     {
@@ -257,25 +347,79 @@ public class MonoGame : Game
         GraphicsDevice.Clear(
             new Color(Screen.backGround.RGB.R, Screen.backGround.RGB.G, Screen.backGround.RGB.B));
         SpriteBatch.Begin(blendState: BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);
-        foreach (Executable script in CurrentExecutables) script.BeforeDraw();
-        foreach (Executable script in CurrentExecutables) script.Draw();
-        foreach (Executable script in CurrentExecutables) script.AfterDraw();
+        foreach (Executable script in CurrentExecutables)
+        {
+                script.BeforeDraw();
+        }
+            foreach (Executable script in CurrentExecutables)
+            {
+                    script.Draw();
+            }
+            foreach (Executable script in CurrentExecutables)
+            {
+                    script.AfterDraw();
+            }
         SpriteBatch.End();
+
+        if (!changingScene)
+        {
+            if (GameData.replay && GameManager.CurrentScene == Scenes.Game && _targetTimer - Ball.LastGoal <= 1)
+            {
+                av++;
+                if (av > GetSeetings.Settings.FPS / REPLAY_FPS)
+                {
+                    Texture2D tex = new Texture2D(GraphicsDevice, SX / 2, SY / 2 - 8);
+                    Color[] pd = new Color[SX * SY];
+                    renderTarget.GetData(pd);
+
+                    Color[] pixelFinal = new Color[SX * (SY - 16) / 4];
+                    for (int i = 0; i < SX * (SY - 16) / 4; i++)
+                    {
+                        pixelFinal[i] = pd[(i * 2) + ((((i) * 2) / SX) * SX) + (SX * 16)];
+                    }
+                    tex.SetData(pixelFinal);
+
+                    replay.Add(tex);
+
+                    if (replay.Count > REPLAY_LENGHT)
+                    {
+                        replay[0].Dispose();
+                        replay.RemoveIndex(0);
+                    }
+
+                    av = 0;
+                }
+            }
+        }
 
         if (SpriteBatch.IsDisposed == false)
         {
-            foreach (Executable script in CurrentExecutables) script.BeforeDraw(ref SpriteBatch);
-            foreach (Executable script in CurrentExecutables) script.Draw(ref SpriteBatch);
-            foreach (Executable script in CurrentExecutables) script.AfterDraw(ref SpriteBatch);
+            foreach (Executable script in CurrentExecutables)
+            {
+                script.BeforeDraw(ref SpriteBatch);
+            }
+            foreach (Executable script in CurrentExecutables)
+            {
+                script.Draw(ref SpriteBatch);
+            }
+            foreach (Executable script in CurrentExecutables)
+            {
+                script.AfterDraw(ref SpriteBatch);
+            }
         }
 
         SpriteBatch.Begin(blendState: BlendState.Additive, samplerState: SamplerState.PointClamp);
-        foreach (Executable script in CurrentExecutables) script.DrawAdditive();
+        foreach (Executable script in CurrentExecutables)
+        {
+            if (!changingScene)
+            {
+                script.DrawAdditive();
+            }
+        }
         SpriteBatch.End();
 
-        foreach (Executable script in CurrentExecutables) script.DrawAdditive(ref SpriteBatch);
-
         GraphicsDevice.SetRenderTarget(renderTargetUI);
+
         GraphicsDevice.Clear(Color.Black);
         if (CurrentShader is null || CurrentShader.GetEffect.IsDisposed == true || FriteCollection.Tools.Shaders.Shader.Stopped)
             SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
@@ -291,16 +435,51 @@ public class MonoGame : Game
 
         SpriteBatch.End();
         SpriteBatch.Begin(blendState: BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);
-        foreach (Executable script in CurrentExecutables) script.DrawUI();
+        foreach (Executable script in CurrentExecutables)
+        {
+            script.DrawUI();
+        }
         SpriteBatch.End();
 
         GraphicsDevice.SetRenderTarget(null);
         GraphicsDevice.Clear(Color.Black);
-        SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
-        SpriteBatch.Draw(renderTargetUI, targetGameRectangle, Color.White);
+
+        if (oldFilter)
+        {
+            oFilter.Parameters["value"].SetValue(_timer / 25f);
+            SpriteBatch.Begin(effect: oFilter, samplerState: SamplerState.PointClamp);
+        }
+        else
+        {
+            SpriteBatch.Begin(samplerState: SamplerState.PointClamp);
+        }
+        if (scaleY < 1.1f)
+        {
+            if (scaleY > 0)
+            {
+                SpriteBatch.Draw(renderTargetUI, new Rectangle(
+                    0,
+                    (int)(targetGameRectangle.Height * (1 - scaleY) / 2),
+                    targetGameRectangle.Width,
+                    (int)(targetGameRectangle.Height * scaleY)
+                    ), Color.White);
+            }
+        }
+        else
+            SpriteBatch.Draw(renderTargetUI, targetGameRectangle, Color.White * z);
         SpriteBatch.End();
 
         changingScene = false;
+        charging = false;
         base.Draw(gameTime);
+    }
+
+    public void DisposeReplay()
+    {
+        foreach (Texture2D tex in replay)
+        {
+            tex.Dispose();
+        }
+        replay.Clear();
     }
 }

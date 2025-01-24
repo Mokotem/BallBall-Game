@@ -1,4 +1,5 @@
 ﻿using FriteCollection.Entity;
+using FriteCollection.Scripting;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Reflection;
@@ -174,7 +175,7 @@ namespace FriteCollection.Input
 
         public abstract class Mouse : IIsKeyDown<Mouse>
         {
-            public static bool Hide { set { FriteModel.MonoGame.instance.IsMouseVisible = !value; } }
+            public static bool Hide { set { GameManager.instance.IsMouseVisible = !value; } }
             public static bool Left { get { return Microsoft.Xna.Framework.Input.Mouse.GetState().LeftButton == ButtonState.Pressed; } }
             public static bool Right { get { return Microsoft.Xna.Framework.Input.Mouse.GetState().RightButton == ButtonState.Pressed; } }
             public static bool Middle { get { return Microsoft.Xna.Framework.Input.Mouse.GetState().MiddleButton == ButtonState.Pressed; } }
@@ -182,8 +183,8 @@ namespace FriteCollection.Input
             {
                 return new FriteCollection.Entity.Vector
                 (
-                    ((Microsoft.Xna.Framework.Input.Mouse.GetState().X - FriteModel.MonoGame.instance.targetGameRectangle.Location.X) / FriteModel.MonoGame.instance.aspectRatio) - FriteModel.MonoGame.instance.screenBounds[(int)bound].x,
-                    ((-Microsoft.Xna.Framework.Input.Mouse.GetState().Y + FriteModel.MonoGame.instance.targetGameRectangle.Location.Y) / FriteModel.MonoGame.instance.aspectRatio) + FriteModel.MonoGame.instance.screenBounds[(int)bound].y
+                    ((Microsoft.Xna.Framework.Input.Mouse.GetState().X - GameManager.instance.targetGameRectangle.Location.X) / GameManager.instance.aspectRatio) - GameManager.instance.screenBounds[(int)bound].x,
+                    ((-Microsoft.Xna.Framework.Input.Mouse.GetState().Y + GameManager.instance.targetGameRectangle.Location.Y) / GameManager.instance.aspectRatio) + GameManager.instance.screenBounds[(int)bound].y
                 );
             }
 

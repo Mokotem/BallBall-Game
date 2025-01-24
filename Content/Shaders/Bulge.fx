@@ -40,7 +40,7 @@ float4 MainPS(VertexShaderOutput input) : COLOR
 	
     float thing = pow(cx - pos.r, 2) + pow(cy - pos.g, 2);
     float dist = sqrt(thing);
-    float mult = pow(dist, 2) * value;
+    float mult = pow(dist, 1.5) * value;
 	
     pos.r += (cx - pos.r) * mult;
     pos.g += (cy - pos.g) * mult;

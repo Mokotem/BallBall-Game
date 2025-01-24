@@ -1,16 +1,24 @@
-﻿using RocketLike;
-using Microsoft.Xna.Framework.Graphics;
-using System.IO;
-using Newtonsoft.Json;
-using System;
-using System.Reflection;
+﻿using FriteCollection.Audio;
 using FriteCollection.Entity;
-using FriteCollection.Audio;
+using Microsoft.Xna.Framework.Graphics;
+using Newtonsoft.Json;
+using RocketLike;
+using System;
+using System.IO;
+using System.Windows.Forms.Design;
 
 namespace FriteCollection.Scripting;
 
 public abstract class GameManager
 {
+    public static FriteModel.MonoGame instance;
+
+    public static void RESET()
+    {
+        GameData.firstConnection = true;
+        CurrentScene = GetSeetings.Settings.StartScene;
+    }
+
     public static void Print(params object[] listText)
     {
         string finalTxt = "";
@@ -20,7 +28,7 @@ public abstract class GameManager
 
     public static SpriteFont GameFont;
 
-    private static Scenes _currentScene;
+    private static Scenes _currentScene = Scenes.Menu;
     /// <summary>
     /// Scène en cour d'execution.
     /// </summary>
@@ -33,8 +41,22 @@ public abstract class GameManager
 
         set
         {
+
+            instance.charging = true;
             _currentScene = value;
-            FriteModel.MonoGame.instance.UpdateScriptToScene();
+            Music.StopAllMusics();
+            if (value != Scenes.Game)
+            {
+                instance.shutsfx.Play();
+                new Transition();
+                new Sequence(() => 0.5f, () =>
+                {
+                    instance.UpdateScriptToScene();
+                    return 0f;
+                });
+            }
+            else
+                instance.UpdateScriptToScene();
         }
     }
 
@@ -43,7 +65,7 @@ public abstract class GameManager
     /// </summary>
     public static Script GetScript(string name)
     {
-        foreach (Executable script in FriteModel.MonoGame.instance.CurrentExecutables)
+        foreach (Executable script in GameManager.instance.CurrentExecutables)
         {
             if (script is Script)
             {
@@ -66,7 +88,7 @@ public static class Open
     /// </summary>
     public static Texture2D Texture(string path)
     {
-        return FriteModel.MonoGame.instance.Content.Load<Texture2D>(path);
+        return GameManager.instance.Content.Load<Texture2D>(path);
     }
 
     /// <summary>
@@ -74,7 +96,7 @@ public static class Open
     /// </summary>
     public static Music Music(string path)
     {
-        return new Music(FriteModel.MonoGame.instance.Content.Load<Microsoft.Xna.Framework.Media.Song>(path));
+        return new Music(GameManager.instance.Content.Load<Microsoft.Xna.Framework.Media.Song>(path));
     }
 
     /// <summary>
@@ -83,7 +105,7 @@ public static class Open
     public static FriteCollection.Audio.SoundEffect SoundEffect(string path)
     {
         return new FriteCollection.Audio.SoundEffect
-            (FriteModel.MonoGame.instance.Content.Load<Microsoft.Xna.Framework.Audio.SoundEffect>(path));
+            (GameManager.instance.Content.Load<Microsoft.Xna.Framework.Audio.SoundEffect>(path));
     }
 
     /// <summary>
@@ -91,7 +113,7 @@ public static class Open
     /// </summary>
     public static SpriteFont Font(string path)
     {
-        return FriteModel.MonoGame.instance.Content.Load<SpriteFont>(path);
+        return GameManager.instance.Content.Load<SpriteFont>(path);
     }
 
     /// <summary>
@@ -108,9 +130,14 @@ public static class Open
 
 public abstract class SaveManager
 {
+    private const string foldername = "BallBallGame";
+    private static readonly string folder = Path.Combine
+        (Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        @foldername);
     private static readonly string path = Path.Combine
         (Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        @"FriteCollection\Save_BallBallGame.json");
+        @"BallBallGame\Save_BallBallGame.json");
+    private static FileInfo _info;
 
     public static string SavePath
     {
@@ -120,33 +147,98 @@ public abstract class SaveManager
         }
     }
 
-    public static bool FileExist
+    public static bool SaveExist
     {
         get
         {
-            return File.Exists(path);
+            return Directory.Exists(folder) && File.Exists(path);
         }
     }
 
+    /// <summary>
+    /// bytes.
+    /// </summary>
+    public static long SpaceTaking => _info is null ? 0 : _info.Length;
+
     public static void Save(object _struct)
     {
-        string save = JsonConvert.SerializeObject(_struct);
-        using (StreamWriter sw = new StreamWriter(path))
-            sw.Write(save);
+        bool noError = true;
+        try
+        {
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+            string save = JsonConvert.SerializeObject(_struct);
+            using (StreamWriter sw = new StreamWriter(path))
+            {
+                sw.Write(save);
+            }
+            _info = new FileInfo(path);
+        }
+        catch (Exception ex)
+        {
+            new MessageBox(false, "failed to save data : " + ex.Message);
+            noError = false;
+        }
+
+        if (noError)
+        {
+            GameData.saved = true;
+            new MessageBox(true, "data successfully saved.");
+        }
     }
 
     public static void Delete()
     {
-        if (File.Exists(path))
-        File.Delete(path);
+        bool noError = true;
+        try
+        {
+            File.Delete(path);
+            Directory.Delete(folder);
+            _info = null;
+        }
+        catch
+        {
+            if (Directory.Exists(folder))
+            {
+                new MessageBox(false, "folder can't be deleted. delete it at " + folder);
+            }
+            noError = false;
+        }
+
+        if (noError)
+        {
+            new MessageBox(true, "data successfully deleted.");
+        }
     }
 
-    public static T Load<T>()
+    public static SAVEDATA Load()
     {
-        string file;
-        using (StreamReader sr = new StreamReader(path))
-            file = sr.ReadToEnd();
-        return JsonConvert.DeserializeObject<T>(file);
+        bool noError = true;
+        try
+        {
+            string file;
+            using (StreamReader sr = new StreamReader(path))
+                file = sr.ReadToEnd();
+            _info = new FileInfo(path);
+            SAVEDATA data = JsonConvert.DeserializeObject<SAVEDATA>(file);
+            if (data.i.Length != 9)
+                throw new Exception("input list size not valid");
+            else
+                return data;
+        }
+        catch (Exception ex)
+        {
+            new MessageBox(false, "failed to load data : " + ex.Message);
+            noError = false;
+        }
+
+        if (noError)
+        {
+            new MessageBox(true, "data successfully loaded.");
+        }
+        return new SAVEDATA();
     }
 }
 

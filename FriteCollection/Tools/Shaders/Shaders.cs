@@ -27,8 +27,8 @@ namespace FriteCollection.Tools.Shaders
 
         public Shader()
         {
-            _effect = FriteModel.MonoGame.instance.Content.Load<Effect>("Shaders/" + this.GetType().Name);
-            FriteModel.MonoGame.instance.CurrentShader = this;
+            _effect = GameManager.instance.Content.Load<Effect>("Shaders/" + this.GetType().Name);
+            GameManager.instance.CurrentShader = this;
         }
 
         public bool Active
@@ -36,9 +36,9 @@ namespace FriteCollection.Tools.Shaders
             set
             {
                 if (value)
-                    FriteModel.MonoGame.instance.CurrentShader = this;
+                    GameManager.instance.CurrentShader = this;
                 else
-                    FriteModel.MonoGame.instance.CurrentShader = null;
+                    GameManager.instance.CurrentShader = null;
             }
         }
 
@@ -89,7 +89,7 @@ namespace FriteCollection.Tools.Shaders
         {
             public Bulge() : base()
             {
-                _effect = FriteModel.MonoGame.instance.Content.Load<Effect>("Shaders/Bulge");
+                _effect = GameManager.instance.Content.Load<Effect>("Shaders/Bulge");
                 _effect.Parameters["value"].SetValue(0);
             }
 
@@ -112,7 +112,6 @@ namespace FriteCollection.Tools.Shaders
                         1 - ((value.y + (GetSeetings.Settings.GameFixeHeight / 2f))
                         / (float)GetSeetings.Settings.GameFixeHeight
                         ));
-                    GameManager.Print(value, v);
                     _effect.Parameters["cx"].SetValue(v.x);
                     _effect.Parameters["cy"].SetValue(v.y);
                 }
